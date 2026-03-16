@@ -1,0 +1,1228 @@
+<!doctype html>
+<html lang="en" class="scroll-smooth">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Lead Management System | Capture & Convert Leads</title>
+    {% load static %}
+    <script src="https://cdn.tailwindcss.com"></script>
+    <meta name="csrf-token" content="{{ csrf_token }}">
+    <link
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"
+      rel="stylesheet"
+    />
+    <style>
+      .glass-card {
+        background: rgba(255, 255, 255, 0.95);
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+      }
+      .reveal {
+        opacity: 0;
+        transform: translateY(30px);
+        transition: all 0.8s ease-out;
+      }
+      .reveal.active {
+        opacity: 1;
+        transform: translateY(0);
+      }
+      /* WhatsApp-like Chatbot specific CSS */
+      .chatbot-fab {
+          position: fixed;
+          right: 20px;
+          bottom: 20px;
+          width: 64px;
+          height: 64px;
+          border-radius: 999px;
+          border: none;
+          cursor: pointer;
+          background: #25D366; /* WhatsApp green */
+          color: #fff;
+          font-weight: 700;
+          box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+          z-index: 2000;
+      }
+      .chatbot-window {
+          position: fixed;
+          right: 20px;
+          bottom: 96px;
+          width: 360px;
+          max-width: calc(100vw - 40px);
+          height: 520px;
+          max-height: calc(100vh - 140px);
+          background: #0b141a; /* WhatsApp dark */
+          border-radius: 14px;
+          overflow: hidden;
+          box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+          z-index: 2000;
+          display: flex;
+          flex-direction: column;
+      }
+      .chatbot-hidden {
+          display: none;
+      }
+      .chatbot-header {
+          background: #075E54;
+          color: #fff;
+          padding: 12px;
+          display: flex;
+          gap: 10px;
+          align-items: center;
+      }
+      .chatbot-avatar {
+          width: 36px;
+          height: 36px;
+          border-radius: 999px;
+          background: rgba(255,255,255,0.2);
+          display: grid;
+          place-items: center;
+          font-weight: 700;
+      }
+      .chatbot-title {
+          flex: 1;
+          min-width: 0;
+      }
+      .chatbot-name {
+          font-weight: 700;
+          line-height: 1.1;
+      }
+      .chatbot-subtitle {
+          font-size: 0.8rem;
+          opacity: 0.9;
+      }
+      .chatbot-close {
+          background: transparent;
+          border: none;
+          color: #fff;
+          font-size: 22px;
+          cursor: pointer;
+          padding: 0 6px;
+      }
+      .chatbot-messages {
+          flex: 1;
+          padding: 12px;
+          overflow-y: auto;
+          background: #0b141a;
+      }
+      .chatbot-bubble {
+          max-width: 85%;
+          padding: 10px 12px;
+          border-radius: 10px;
+          margin: 8px 0;
+          font-size: 0.95rem;
+          line-height: 1.3;
+          white-space: pre-wrap;
+      }
+      .chatbot-bubble.bot {
+          background: #202c33;
+          color: #e9edef;
+          border-top-left-radius: 2px;
+      }
+      .chatbot-bubble.user {
+          background: #005c4b;
+          color: #e9edef;
+          margin-left: auto;
+          border-top-right-radius: 2px;
+      }
+      .chatbot-inputbar {
+          background: #111b21;
+          padding: 10px;
+          display: flex;
+          gap: 8px;
+          align-items: center;
+      }
+      .chatbot-input {
+          flex: 1;
+          border-radius: 999px;
+          border: 1px solid rgba(255,255,255,0.12);
+          background: #202c33;
+          color: #e9edef;
+          padding: 10px 12px;
+          outline: none;
+          width: 100%;
+      }
+      .chatbot-input::placeholder {
+          color: rgba(233,237,239,0.6);
+      }
+      .chatbot-send {
+          border: none;
+          border-radius: 999px;
+          background: #25D366;
+          color: #fff;
+          padding: 10px 14px;
+          cursor: pointer;
+          font-weight: 700;
+      }
+      @media (max-width: 480px) {
+          .chatbot-window {
+              right: 10px;
+              bottom: 86px;
+              width: calc(100vw - 20px);
+          }
+          .chatbot-fab {
+              right: 10px;
+              bottom: 10px;
+          }
+      }
+    </style>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              primary: "#1e40af" /* blue-800 */,
+              secondary: "#3b82f6" /* blue-500 */,
+              accent: "#eff6ff" /* blue-50 */,
+              dark: "#0f172a" /* slate-900 */,
+            },
+            animation: {
+              float: "float 3s ease-in-out infinite",
+              "fade-in-up": "fadeInUp 0.8s ease-out forwards",
+            },
+            keyframes: {
+              float: {
+                "0%, 100%": { transform: "translateY(0)" },
+                "50%": { transform: "translateY(-10px)" },
+              },
+              fadeInUp: {
+                "0%": { opacity: "0", transform: "translateY(20px)" },
+                "100%": { opacity: "1", transform: "translateY(0)" },
+              },
+            },
+          },
+        },
+      };
+    </script>
+  </head>
+  <body
+    class="font-sans text-gray-800 bg-gray-50 antialiased selection:bg-blue-200 selection:text-blue-900"
+  >
+    <!-- Navbar -->
+    <nav
+      class="fixed w-full z-50 glass-card shadow-sm transition-all duration-300"
+      id="navbar"
+    >
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="flex justify-between items-center h-20">
+          <div
+            class="flex-shrink-0 flex items-center cursor-pointer"
+            onclick="window.scrollTo(0, 0)"
+          >
+            <div
+              class="w-10 h-10 bg-primary rounded-lg flex items-center justify-center text-white font-bold text-xl mr-3 shadow-md"
+            >
+              <i class="fa-solid fa-chart-line"></i>
+            </div>
+            <span class="font-bold text-xl text-dark tracking-tight"
+              >LeadSystem</span
+            >
+          </div>
+          <!-- Desktop Menu -->
+          <div class="hidden md:flex space-x-8 items-center">
+            <a
+              href="#problem"
+              class="text-gray-600 hover:text-primary font-medium transition duration-200"
+              >The Challenge</a
+            >
+            <a
+              href="#solution"
+              class="text-gray-600 hover:text-primary font-medium transition duration-200"
+              >Solution</a
+            >
+            <a
+              href="#features"
+              class="text-gray-600 hover:text-primary font-medium transition duration-200"
+              >Features</a
+            >
+            <a
+              href="#architecture"
+              class="text-gray-600 hover:text-primary font-medium transition duration-200"
+              >Architecture</a
+            >
+          </div>
+          <!-- Mobile Menu Button -->
+          <div class="md:hidden flex items-center">
+            <button
+              id="mobile-menu-btn"
+              class="text-gray-600 hover:text-primary focus:outline-none"
+            >
+              <i class="fa-solid fa-bars text-2xl"></i>
+            </button>
+          </div>
+        </div>
+      </div>
+      <!-- Mobile Menu -->
+      <div
+        id="mobile-menu"
+        class="hidden md:hidden bg-white border-t border-gray-100 absolute w-full shadow-lg"
+      >
+        <div class="px-4 pt-2 pb-6 space-y-2">
+          <a
+            href="#problem"
+            class="block px-3 py-3 rounded-md text-base font-medium text-gray-700 hover:text-primary hover:bg-gray-50"
+            >The Challenge</a
+          >
+          <a
+            href="#solution"
+            class="block px-3 py-3 rounded-md text-base font-medium text-gray-700 hover:text-primary hover:bg-gray-50"
+            >Solution</a
+          >
+          <a
+            href="#features"
+            class="block px-3 py-3 rounded-md text-base font-medium text-gray-700 hover:text-primary hover:bg-gray-50"
+            >Features</a
+          >
+        </div>
+      </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section
+      class="relative pt-32 pb-20 lg:pt-48 lg:pb-32 overflow-hidden bg-gradient-to-br from-white via-accent to-blue-100"
+    >
+      <!-- Abstract background shapes -->
+      <div
+        class="absolute top-0 right-0 -mr-20 -mt-20 w-96 h-96 rounded-full bg-blue-200 mix-blend-multiply filter blur-3xl opacity-50 animate-blob"
+      ></div>
+      <div
+        class="absolute bottom-0 left-0 -ml-20 -mb-20 w-72 h-72 rounded-full bg-indigo-200 mix-blend-multiply filter blur-3xl opacity-50 animate-blob animation-delay-2000"
+      ></div>
+
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+        <div class="text-center max-w-4xl mx-auto">
+          <span
+            class="inline-block py-1 px-3 rounded-full bg-blue-100 text-primary text-sm font-semibold tracking-wider mb-6 animate-fade-in-up"
+            style="animation-delay: 0.1s"
+            >POWERFUL CRM PLATFORM</span
+          >
+
+          <h1
+            class="text-5xl md:text-6xl lg:text-7xl font-extrabold text-dark tracking-tight mb-8 leading-tight animate-fade-in-up"
+            style="animation-delay: 0.2s"
+          >
+            Capture, Track and
+            <span
+              class="text-transparent bg-clip-text bg-gradient-to-r from-primary to-secondary"
+              >Convert Every Lead</span
+            >
+          </h1>
+
+          <p
+            class="mt-4 text-lg md:text-xl text-gray-600 mb-10 max-w-3xl mx-auto leading-relaxed animate-fade-in-up"
+            style="animation-delay: 0.4s"
+          >
+            Businesses receive leads from multiple platforms like WhatsApp,
+            website forms, social media, phone calls and emails.
+            <strong class="text-gray-800"
+              >Manage them all in one centralized platform.</strong
+            >
+          </p>
+
+          <div
+            class="flex flex-col sm:flex-row justify-center items-center gap-4 animate-fade-in-up"
+            style="animation-delay: 0.6s"
+          >
+            <a
+              href="{% url 'inquiry_form' %}"
+              class="w-full sm:w-auto px-8 py-4 border border-transparent text-lg font-medium rounded-xl text-white bg-primary hover:bg-blue-900 hover:shadow-xl hover:shadow-blue-500/30 transition-all duration-300 transform hover:-translate-y-1"
+            >
+              Submit Inquiry
+            </a>
+            <a
+              href="{% url 'login' %}"
+              class="w-full sm:w-auto px-8 py-4 border-2 border-gray-200 text-lg font-medium rounded-xl text-gray-700 bg-white hover:border-primary hover:text-primary transition-all duration-300"
+            >
+              Login
+            </a>
+            <a
+              href="#chatbot"
+              onclick="
+                document.getElementById('chatbot-fab').click();
+                return false;
+              "
+              class="text-gray-500 hover:text-secondary font-medium ml-2 flex items-center transition-colors"
+            >
+              <i class="fa-regular fa-comment-dots mr-2 text-xl"></i> Chat with
+              Bot
+            </a>
+          </div>
+        </div>
+
+        <!-- Dashboard Mockup Image -->
+        <div
+          class="mt-20 relative animate-fade-in-up"
+          style="animation-delay: 0.8s"
+        >
+          <div
+            class="absolute inset-0 bg-gradient-to-t from-gray-50 to-transparent z-10 h-32 bottom-0 w-full top-auto"
+          ></div>
+          <div
+            class="bg-white rounded-2xl shadow-2xl overflow-hidden border border-gray-100 transform rotate-1 hover:rotate-0 transition duration-500 mx-auto max-w-5xl"
+          >
+            <!-- Browser Chrome -->
+            <div
+              class="bg-gray-100 flex items-center px-4 py-3 border-b border-gray-200"
+            >
+              <div class="flex space-x-2">
+                <div class="w-3 h-3 rounded-full bg-red-400"></div>
+                <div class="w-3 h-3 rounded-full bg-yellow-400"></div>
+                <div class="w-3 h-3 rounded-full bg-green-400"></div>
+              </div>
+            </div>
+            <!-- Fake Dashboard Content -->
+            <div class="p-4 md:p-8 bg-gray-50 grid grid-cols-4 gap-4 md:gap-6">
+              <div class="col-span-1 hidden md:block space-y-6 pt-2">
+                <div class="space-y-3">
+                  <div class="text-[10px] font-bold text-gray-400 uppercase tracking-widest pl-1">Menu</div>
+                  <div class="flex items-center gap-2 px-3 py-2 bg-blue-100 text-primary rounded-lg text-xs font-bold">
+                    <i class="fa-solid fa-house"></i> Dashboard
+                  </div>
+                  <div class="flex items-center gap-2 px-3 py-2 text-gray-500 rounded-lg text-xs font-bold hover:bg-gray-100 transition">
+                    <i class="fa-solid fa-users"></i> Leads List
+                  </div>
+                  <div class="flex items-center gap-2 px-3 py-2 text-gray-500 rounded-lg text-xs font-bold hover:bg-gray-100 transition">
+                    <i class="fa-solid fa-ticket"></i> Tickets
+                  </div>
+                  <div class="flex items-center gap-2 px-3 py-2 text-gray-500 rounded-lg text-xs font-bold hover:bg-gray-100 transition">
+                    <i class="fa-solid fa-gear"></i> Settings
+                  </div>
+                </div>
+              </div>
+              <div class="col-span-4 md:col-span-3 space-y-4 md:space-y-6">
+                <!-- Mini Stats -->
+                <div class="grid grid-cols-3 gap-3 md:gap-4">
+                  <div class="bg-blue-600 rounded-xl p-3 md:p-4 text-white shadow-lg shadow-blue-200">
+                    <div class="text-[10px] uppercase font-bold opacity-80 mb-1">Total Leads</div>
+                    <div class="text-xl md:text-2xl font-bold">1,284</div>
+                    <div class="text-[10px] mt-1 text-blue-100">+12% from last week</div>
+                  </div>
+                  <div class="bg-white rounded-xl p-3 md:p-4 shadow-sm border border-gray-100">
+                    <div class="text-[10px] uppercase font-bold text-gray-400 mb-1">Conversion</div>
+                    <div class="text-xl md:text-2xl font-bold text-dark">24.8%</div>
+                    <div class="text-[10px] mt-1 text-green-500">Good performance</div>
+                  </div>
+                  <div class="bg-white rounded-xl p-3 md:p-4 shadow-sm border border-gray-100">
+                    <div class="text-[10px] uppercase font-bold text-gray-400 mb-1">Tickets</div>
+                    <div class="text-xl md:text-2xl font-bold text-dark">42</div>
+                    <div class="text-[10px] mt-1 text-orange-500">12 Pending</div>
+                  </div>
+                </div>
+                <!-- Mini Table -->
+                <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+                  <div class="px-4 py-3 border-b border-gray-50 bg-gray-50/50 flex justify-between items-center">
+                    <span class="text-xs font-bold text-gray-700">Recent Inquiries</span>
+                    <span class="text-[10px] text-primary font-bold">View All</span>
+                  </div>
+                  <div class="p-0 overflow-x-auto">
+                    <table class="w-full text-[11px] md:text-xs text-left">
+                      <thead>
+                        <tr class="text-gray-400 border-b border-gray-50">
+                          <th class="px-4 py-2 font-bold uppercase tracking-wider">Customer</th>
+                          <th class="px-4 py-2 font-bold uppercase tracking-wider">Source</th>
+                          <th class="px-4 py-2 font-bold uppercase tracking-wider">Status</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <tr class="border-b border-gray-50 hover:bg-gray-50 transition">
+                          <td class="px-4 py-2 font-medium">Rahul Sharma</td>
+                          <td class="px-4 py-2"><span class="px-2 py-0.5 rounded-full bg-blue-50 text-blue-600">Web Form</span></td>
+                          <td class="px-4 py-2"><span class="px-2 py-0.5 rounded-full bg-yellow-100 text-yellow-700">Inquiry</span></td>
+                        </tr>
+                        <tr class="border-b border-gray-50 hover:bg-gray-50 transition">
+                          <td class="px-4 py-2 font-medium">Amit Patel</td>
+                          <td class="px-4 py-2"><span class="px-2 py-0.5 rounded-full bg-green-50 text-green-600">Chatbot</span></td>
+                          <td class="px-4 py-2"><span class="px-2 py-0.5 rounded-full bg-green-100 text-green-700">Closed</span></td>
+                        </tr>
+                        <tr class="hover:bg-gray-50 transition">
+                          <td class="px-4 py-2 font-medium">Priya Singh</td>
+                          <td class="px-4 py-2"><span class="px-2 py-0.5 rounded-full bg-purple-50 text-purple-600">Email</span></td>
+                          <td class="px-4 py-2"><span class="px-2 py-0.5 rounded-full bg-blue-100 text-blue-700">Proposal</span></td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Problem Section -->
+    <section id="problem" class="py-24 bg-white">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="lg:grid lg:grid-cols-2 lg:gap-16 items-center">
+          <div class="mb-12 lg:mb-0 reveal">
+            <h2
+              class="text-primary font-bold tracking-wide uppercase text-sm mb-3"
+            >
+              The Problem
+            </h2>
+            <h3 class="text-3xl md:text-4xl font-extrabold text-dark mb-6">
+              The Challenge Businesses Face
+            </h3>
+            <p class="text-lg text-gray-600 mb-6">
+              Today, businesses receive leads from countless fragmented
+              channels:
+            </p>
+            <ul class="space-y-3 mb-8">
+              <li class="flex items-center text-gray-700">
+                <div
+                  class="w-8 h-8 rounded-full bg-green-100 text-green-600 flex items-center justify-center mr-3"
+                >
+                  <i class="fa-brands fa-whatsapp"></i>
+                </div>
+                <span class="font-medium">WhatsApp messages</span>
+              </li>
+              <li class="flex items-center text-gray-700">
+                <div
+                  class="w-8 h-8 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center mr-3"
+                >
+                  <i class="fa-solid fa-share-nodes"></i>
+                </div>
+                <span class="font-medium">Social Media direct messages</span>
+              </li>
+              <li class="flex items-center text-gray-700">
+                <div
+                  class="w-8 h-8 rounded-full bg-purple-100 text-purple-600 flex items-center justify-center mr-3"
+                >
+                  <i class="fa-solid fa-desktop"></i>
+                </div>
+                <span class="font-medium">Website contact forms</span>
+              </li>
+              <li class="flex items-center text-gray-700">
+                <div
+                  class="w-8 h-8 rounded-full bg-yellow-100 text-yellow-600 flex items-center justify-center mr-3"
+                >
+                  <i class="fa-solid fa-phone"></i>
+                </div>
+                <span class="font-medium">Direct phone calls</span>
+              </li>
+              <li class="flex items-center text-gray-700">
+                <div
+                  class="w-8 h-8 rounded-full bg-gray-100 text-gray-600 flex items-center justify-center mr-3"
+                >
+                  <i class="fa-solid fa-envelope"></i>
+                </div>
+                <span class="font-medium">Direct emails</span>
+              </li>
+            </ul>
+          </div>
+
+          <div class="reveal delay-100">
+            <div
+              class="bg-gray-50 rounded-2xl p-8 border border-gray-200 relative overflow-hidden"
+            >
+              <div class="absolute top-0 left-0 w-2 h-full bg-red-500"></div>
+              <h4 class="text-xl font-bold text-dark mb-4 drop-shadow-sm">
+                Without a proper system, this leads to:
+              </h4>
+
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8">
+                <div
+                  class="bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex items-start"
+                >
+                  <i
+                    class="fa-solid fa-clock-rotate-left text-red-500 mt-1 mr-3 text-lg"
+                  ></i>
+                  <div>
+                    <h5 class="font-bold text-gray-900 text-sm">
+                      Missed/Delayed Leads
+                    </h5>
+                    <p class="text-xs text-gray-500 mt-1">
+                      Slow response kills deals.
+                    </p>
+                  </div>
+                </div>
+                <div
+                  class="bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex items-start"
+                >
+                  <i
+                    class="fa-solid fa-shoe-prints text-red-500 mt-1 mr-3 text-lg"
+                  ></i>
+                  <div>
+                    <h5 class="font-bold text-gray-900 text-sm">
+                      No Follow-up Tracking
+                    </h5>
+                    <p class="text-xs text-gray-500 mt-1">
+                      Conversations get lost.
+                    </p>
+                  </div>
+                </div>
+                <div
+                  class="bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex items-start"
+                >
+                  <i
+                    class="fa-solid fa-eye-slash text-red-500 mt-1 mr-3 text-lg"
+                  ></i>
+                  <div>
+                    <h5 class="font-bold text-gray-900 text-sm">
+                      Poor Sales Visibility
+                    </h5>
+                    <p class="text-xs text-gray-500 mt-1">
+                      Managers fly blind.
+                    </p>
+                  </div>
+                </div>
+                <div
+                  class="bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex items-start"
+                >
+                  <i
+                    class="fa-solid fa-chart-line-down text-red-500 mt-1 mr-3 text-lg"
+                  ></i>
+                  <div>
+                    <h5 class="font-bold text-gray-900 text-sm">
+                      Lost Revenue
+                    </h5>
+                    <p class="text-xs text-gray-500 mt-1">
+                      Competitors win the client.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <div
+                class="bg-red-50 border border-red-100 p-5 rounded-xl text-center"
+              >
+                <i
+                  class="fa-solid fa-triangle-exclamation text-red-500 text-2xl mb-2"
+                ></i>
+                <p class="text-red-800 font-medium italic">
+                  "Up to 15–30% of potential revenue can be lost due to poor
+                  lead management."
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Solution Section -->
+    <section
+      id="solution"
+      class="py-24 bg-primary text-white relative overflow-hidden"
+    >
+      <div class="absolute inset-0 opacity-10 pattern-dots"></div>
+      <div
+        class="absolute top-0 right-0 p-32 bg-blue-600 rounded-full mix-blend-screen filter blur-3xl opacity-50 transform translate-x-1/2 -translate-y-1/2"
+      ></div>
+
+      <div
+        class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 text-center"
+      >
+        <h2
+          class="text-blue-200 font-bold tracking-wide uppercase text-sm mb-3"
+        >
+          The Solution
+        </h2>
+        <h3 class="text-3xl md:text-5xl font-extrabold mb-8 drop-shadow-md">
+          Lead Management System
+        </h3>
+
+        <p
+          class="text-xl text-blue-100 max-w-4xl mx-auto leading-relaxed font-light mb-16"
+        >
+          A centralized system that captures, tracks and manages leads from
+          multiple channels in
+          <strong class="text-white font-semibold">one dashboard</strong>. It
+          helps sales teams respond faster, track customer interactions and
+          convert more leads into customers.
+        </p>
+
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-8 max-w-5xl mx-auto">
+          <div class="text-center reveal">
+            <div
+              class="w-16 h-16 mx-auto bg-white/10 rounded-full flex items-center justify-center mb-4 text-3xl"
+            >
+              <i class="fa-solid fa-bolt text-yellow-300"></i>
+            </div>
+            <div class="font-bold text-lg">Respond Faster</div>
+          </div>
+          <div class="text-center reveal delay-100">
+            <div
+              class="w-16 h-16 mx-auto bg-white/10 rounded-full flex items-center justify-center mb-4 text-3xl"
+            >
+              <i class="fa-solid fa-magnifying-glass-chart text-blue-300"></i>
+            </div>
+            <div class="font-bold text-lg">Track Interactions</div>
+          </div>
+          <div class="text-center reveal delay-200">
+            <div
+              class="w-16 h-16 mx-auto bg-white/10 rounded-full flex items-center justify-center mb-4 text-3xl"
+            >
+              <i class="fa-solid fa-users text-green-300"></i>
+            </div>
+            <div class="font-bold text-lg">Team Oversight</div>
+          </div>
+          <div class="text-center reveal delay-300">
+            <div
+              class="w-16 h-16 mx-auto bg-white/10 rounded-full flex items-center justify-center mb-4 text-3xl"
+            >
+              <i class="fa-solid fa-handshake-angle text-purple-300"></i>
+            </div>
+            <div class="font-bold text-lg">Convert More</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Features Section -->
+    <section id="features" class="py-24 bg-gray-50">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="text-center max-w-3xl mx-auto mb-16 reveal">
+          <h2
+            class="text-primary font-bold tracking-wide uppercase text-sm mb-3"
+          >
+            Core Features
+          </h2>
+          <h3 class="text-3xl md:text-4xl font-extrabold text-dark">
+            Everything you need to close
+          </h3>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-8 lg:gap-12">
+          <!-- Feature 1 -->
+          <div
+            class="bg-white rounded-2xl p-8 shadow-sm hover:shadow-xl transition-shadow duration-300 border border-gray-100 group reveal"
+          >
+            <div
+              class="w-14 h-14 bg-blue-50 text-secondary rounded-xl flex items-center justify-center text-2xl mb-6 group-hover:scale-110 transition-transform duration-300"
+            >
+              <i class="fa-solid fa-magnet text-primary"></i>
+            </div>
+            <h4 class="text-xl font-bold text-dark mb-3">Lead Capture</h4>
+            <p class="text-gray-600 leading-relaxed">
+              Automatically capture leads from website forms, WhatsApp, social
+              media, phone calls and email. Never lose a lead to manual entry
+              errors.
+            </p>
+          </div>
+
+          <!-- Feature 2 -->
+          <div
+            class="bg-white rounded-2xl p-8 shadow-sm hover:shadow-xl transition-shadow duration-300 border border-gray-100 group reveal delay-100"
+          >
+            <div
+              class="w-14 h-14 bg-indigo-50 text-indigo-500 rounded-xl flex items-center justify-center text-2xl mb-6 group-hover:scale-110 transition-transform duration-300"
+            >
+              <i class="fa-solid fa-list-check text-indigo-600"></i>
+            </div>
+            <h4 class="text-xl font-bold text-dark mb-3">Sales Processing</h4>
+            <p class="text-gray-600 leading-relaxed">
+              Manage follow-ups, email synchronization and maintain CRM
+              interaction history. Keep the context of every conversation in one
+              place.
+            </p>
+          </div>
+
+          <!-- Feature 3 -->
+          <div
+            class="bg-white rounded-2xl p-8 shadow-sm hover:shadow-xl transition-shadow duration-300 border border-gray-100 group reveal"
+          >
+            <div
+              class="w-14 h-14 bg-purple-50 text-purple-500 rounded-xl flex items-center justify-center text-2xl mb-6 group-hover:scale-110 transition-transform duration-300"
+            >
+              <i class="fa-solid fa-chart-pie text-purple-600"></i>
+            </div>
+            <h4 class="text-xl font-bold text-dark mb-3">Manager Monitoring</h4>
+            <p class="text-gray-600 leading-relaxed">
+              Managers can track team performance, response time and lead
+              progress through intuitive dashboards and real-time reports.
+            </p>
+          </div>
+
+          <!-- Feature 4 -->
+          <div
+            class="bg-white rounded-2xl p-8 shadow-sm hover:shadow-xl transition-shadow duration-300 border border-gray-100 group reveal delay-100"
+          >
+            <div
+              class="w-14 h-14 bg-red-50 text-red-500 rounded-xl flex items-center justify-center text-2xl mb-6 group-hover:scale-110 transition-transform duration-300"
+            >
+              <i class="fa-solid fa-arrow-up-right-dots text-red-600"></i>
+            </div>
+            <h4 class="text-xl font-bold text-dark mb-3">
+              Automated Escalation
+            </h4>
+            <p class="text-gray-600 leading-relaxed">
+              Set SLA rules. If a lead is not handled within a certain time, it
+              can automatically escalate to managers to ensure zero drop-offs.
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Benefits Section -->
+    <section class="py-20 bg-white border-t border-b border-gray-100">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="text-center mb-16 reveal">
+          <h3 class="text-3xl font-extrabold text-dark">
+            Why Choose Our Platform
+          </h3>
+        </div>
+
+        <div class="flex flex-wrap justify-center gap-4 reveal">
+          <div
+            class="bg-accent text-primary px-6 py-4 rounded-full font-semibold border border-blue-100 shadow-sm flex items-center hover:-translate-y-1 transition transform duration-200"
+          >
+            <i class="fa-solid fa-arrow-trend-up mr-3"></i> Increase lead
+            conversion rates
+          </div>
+          <div
+            class="bg-accent text-primary px-6 py-4 rounded-full font-semibold border border-blue-100 shadow-sm flex items-center hover:-translate-y-1 transition transform duration-200"
+          >
+            <i class="fa-solid fa-bullseye mr-3"></i> Reduce missed
+            opportunities
+          </div>
+          <div
+            class="bg-accent text-primary px-6 py-4 rounded-full font-semibold border border-blue-100 shadow-sm flex items-center hover:-translate-y-1 transition transform duration-200"
+          >
+            <i class="fa-solid fa-stopwatch mr-3"></i> Improve response time
+          </div>
+          <div
+            class="bg-accent text-primary px-6 py-4 rounded-full font-semibold border border-blue-100 shadow-sm flex items-center hover:-translate-y-1 transition transform duration-200"
+          >
+            <i class="fa-solid fa-eye mr-3"></i> Better sales visibility
+          </div>
+          <div
+            class="bg-accent text-primary px-6 py-4 rounded-full font-semibold border border-blue-100 shadow-sm flex items-center hover:-translate-y-1 transition transform duration-200"
+          >
+            <i class="fa-solid fa-folder-tree mr-3"></i> Centralized lead
+            management
+          </div>
+          <div
+            class="bg-primary text-white px-8 py-4 rounded-full font-bold shadow-md flex items-center hover:-translate-y-1 transition transform duration-200 cursor-default shadow-blue-500/30"
+          >
+            <i class="fa-solid fa-trophy mr-3 text-yellow-300"></i> Convert more
+            leads into customers
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- System Architecture -->
+    <section id="architecture" class="py-24 bg-gray-50 overflow-hidden">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="text-center max-w-3xl mx-auto mb-16 reveal">
+          <h2
+            class="text-primary font-bold tracking-wide uppercase text-sm mb-3"
+          >
+            Enterprise Grade
+          </h2>
+          <h3 class="text-3xl md:text-4xl font-extrabold text-dark">
+            System Architecture
+          </h3>
+          <p class="mt-4 text-gray-600">
+            Built on modern, secure, and scalable technologies.
+          </p>
+        </div>
+
+        <div class="relative max-w-4xl mx-auto">
+          <!-- Connecting Line -->
+          <div
+            class="hidden md:block absolute left-1/2 top-0 bottom-0 w-1 bg-gradient-to-b from-blue-200 via-primary to-blue-200 -translate-x-1/2 rounded-full"
+          ></div>
+
+          <div class="space-y-12">
+            <!-- Layer 1 -->
+            <div
+              class="relative flex flex-col md:flex-row items-center justify-between group reveal"
+            >
+              <div class="md:w-5/12 order-2 md:order-1 flex justify-end">
+                <div
+                  class="bg-white p-6 rounded-2xl shadow-md border border-gray-100 w-full hover:border-primary transition duration-300 relative"
+                >
+                  <h4 class="font-bold text-lg text-dark mb-2">
+                    Presentation Layer
+                  </h4>
+                  <p class="text-sm text-gray-600">
+                    Users interact through web applications, mobile apps,
+                    chatbots and IVRS.
+                  </p>
+                </div>
+              </div>
+              <div
+                class="z-10 bg-gradient-to-r from-secondary to-primary w-14 h-14 rounded-full border-4 border-gray-50 shadow-md flex items-center justify-center text-white order-1 md:order-2 mb-4 md:mb-0"
+              >
+                <i class="fa-solid fa-laptop-code text-xl"></i>
+              </div>
+              <div class="md:w-5/12 order-3"></div>
+            </div>
+
+            <!-- Layer 2 -->
+            <div
+              class="relative flex flex-col md:flex-row items-center justify-between group reveal delay-100"
+            >
+              <div class="md:w-5/12 order-2 md:order-1"></div>
+              <div
+                class="z-10 bg-gradient-to-r from-secondary to-primary w-14 h-14 rounded-full border-4 border-gray-50 shadow-md flex items-center justify-center text-white order-1 md:order-2 mb-4 md:mb-0"
+              >
+                <i class="fa-solid fa-microchip text-xl"></i>
+              </div>
+              <div class="md:w-5/12 order-3 flex justify-start">
+                <div
+                  class="bg-white p-6 rounded-2xl shadow-md border border-gray-100 w-full hover:border-primary transition duration-300"
+                >
+                  <h4 class="font-bold text-lg text-dark mb-2">
+                    Application Layer
+                  </h4>
+                  <p class="text-sm text-gray-600">
+                    Handles business logic, security protocols and scalable
+                    cloud hosting processes.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <!-- Layer 3 -->
+            <div
+              class="relative flex flex-col md:flex-row items-center justify-between group reveal delay-200"
+            >
+              <div class="md:w-5/12 order-2 md:order-1 flex justify-end">
+                <div
+                  class="bg-white p-6 rounded-2xl shadow-md border border-gray-100 w-full hover:border-primary transition duration-300 relative"
+                >
+                  <h4 class="font-bold text-lg text-dark mb-2">Data Layer</h4>
+                  <p class="text-sm text-gray-600">
+                    Secure database storage with automated backup, encryption
+                    and high scalability.
+                  </p>
+                </div>
+              </div>
+              <div
+                class="z-10 bg-gradient-to-r from-secondary to-primary w-14 h-14 rounded-full border-4 border-gray-50 shadow-md flex items-center justify-center text-white order-1 md:order-2 mb-4 md:mb-0"
+              >
+                <i class="fa-solid fa-database text-xl"></i>
+              </div>
+              <div class="md:w-5/12 order-3"></div>
+            </div>
+
+            <!-- Layer 4 -->
+            <div
+              class="relative flex flex-col md:flex-row items-center justify-between group reveal delay-300"
+            >
+              <div class="md:w-5/12 order-2 md:order-1"></div>
+              <div
+                class="z-10 bg-gradient-to-r from-secondary to-primary w-14 h-14 rounded-full border-4 border-gray-50 shadow-md flex items-center justify-center text-white order-1 md:order-2 mb-4 md:mb-0"
+              >
+                <i class="fa-solid fa-chart-pie text-xl"></i>
+              </div>
+              <div class="md:w-5/12 order-3 flex justify-start">
+                <div
+                  class="bg-white p-6 rounded-2xl shadow-md border border-gray-100 w-full hover:border-primary transition duration-300"
+                >
+                  <h4 class="font-bold text-lg text-dark mb-2">
+                    Reporting Layer
+                  </h4>
+                  <p class="text-sm text-gray-600">
+                    Provides comprehensive dashboards, advanced analytics and
+                    real-time performance insights.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Call to Action -->
+    <section
+      class="py-24 bg-gradient-to-br from-primary to-blue-900 border-t border-blue-800 relative overflow-hidden"
+    >
+      <!-- Background graphics -->
+      <div class="absolute inset-0 opacity-20">
+        <svg width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <pattern
+              id="grid"
+              width="40"
+              height="40"
+              patternUnits="userSpaceOnUse"
+            >
+              <path
+                d="M 40 0 L 0 0 0 40"
+                fill="none"
+                stroke="white"
+                stroke-width="1"
+              />
+            </pattern>
+          </defs>
+          <rect width="100%" height="100%" fill="url(#grid)" />
+        </svg>
+      </div>
+
+      <div
+        class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 text-center relative z-10"
+      >
+        <h2
+          class="text-4xl md:text-5xl font-extrabold text-white mb-8 tracking-tight drop-shadow-lg leading-tight"
+        >
+          Start Managing Your Leads Efficiently
+        </h2>
+        <p class="text-xl text-blue-100 mb-10 max-w-2xl mx-auto font-light">
+          Join modern businesses that are converting more leads and closing more
+          deals with our centralized platform.
+        </p>
+        <div
+          class="flex flex-col sm:flex-row justify-center items-center gap-4"
+        >
+          <a
+            href="{% url 'inquiry_form' %}"
+            class="w-full sm:w-auto px-8 py-4 border border-transparent text-lg font-bold rounded-xl text-primary bg-white hover:bg-gray-50 shadow-xl transition transform hover:-translate-y-1"
+          >
+            Submit Inquiry
+          </a>
+          <a
+            href="{% url 'login' %}"
+            class="w-full sm:w-auto px-8 py-4 border-2 border-white/50 text-lg font-bold rounded-xl text-white bg-white/10 hover:bg-white/20 hover:border-white shadow-lg backdrop-blur-sm transition transform hover:-translate-y-1"
+          >
+            Login
+          </a>
+          <a
+            href="#chatbot"
+            onclick="
+              document.getElementById('chatbot-fab').click();
+              return false;
+            "
+            class="w-full sm:w-auto px-6 py-4 text-lg font-medium rounded-xl text-white/80 hover:text-white transition group flex justify-center mt-4 sm:mt-0"
+          >
+            <i
+              class="fa-regular fa-comment-dots mr-2 mt-1 transition-transform group-hover:scale-110"
+            ></i>
+            Chatbot
+          </a>
+        </div>
+      </div>
+    </section>
+
+    <!-- Contact & Footer Section -->
+    <footer class="bg-dark text-gray-300 pt-16 pb-8 border-t border-gray-800">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div
+          class="grid grid-cols-1 md:grid-cols-4 gap-12 mb-12 border-b border-gray-800 pb-12"
+        >
+          <div class="md:col-span-1">
+            <div class="flex items-center mb-6">
+              <div
+                class="w-8 h-8 bg-primary rounded flex items-center justify-center text-white font-bold mr-2"
+              >
+                <i class="fa-solid fa-chart-line text-sm"></i>
+              </div>
+              <span class="font-bold text-xl text-white tracking-tight"
+                >LeadSystem</span
+              >
+            </div>
+            <p class="text-sm text-gray-400 leading-relaxed mb-6">
+              The ultimate platform for businesses to capture, track, and
+              convert every lead across all channels.
+            </p>
+            <div class="flex space-x-4">
+              <a
+                href="#"
+                class="w-8 h-8 rounded-full bg-gray-800 flex items-center justify-center text-gray-400 hover:bg-primary hover:text-white transition"
+              >
+                <i class="fa-brands fa-twitter"></i>
+              </a>
+              <a
+                href="#"
+                class="w-8 h-8 rounded-full bg-gray-800 flex items-center justify-center text-gray-400 hover:bg-primary hover:text-white transition"
+              >
+                <i class="fa-brands fa-linkedin-in"></i>
+              </a>
+              <a
+                href="#"
+                class="w-8 h-8 rounded-full bg-gray-800 flex items-center justify-center text-gray-400 hover:bg-primary hover:text-white transition"
+              >
+                <i class="fa-brands fa-facebook-f"></i>
+              </a>
+            </div>
+          </div>
+
+          <div>
+            <h4
+              class="text-white font-bold uppercase text-sm mb-6 tracking-wider"
+            >
+              Product Features
+            </h4>
+            <ul class="space-y-3 text-sm font-medium">
+              <li>
+                <a href="#" class="hover:text-white transition">Lead Capture</a>
+              </li>
+              <li>
+                <a href="#" class="hover:text-white transition"
+                  >CRM Synchronization</a
+                >
+              </li>
+              <li>
+                <a href="#" class="hover:text-white transition"
+                  >Performance Tracking</a
+                >
+              </li>
+              <li>
+                <a href="#" class="hover:text-white transition"
+                  >Automated Escalation</a
+                >
+              </li>
+              <li>
+                <a href="#" class="hover:text-white transition"
+                  >Analytics Dashboard</a
+                >
+              </li>
+            </ul>
+          </div>
+
+          <div>
+            <h4
+              class="text-white font-bold uppercase text-sm mb-6 tracking-wider"
+            >
+              Quick Links
+            </h4>
+            <ul class="space-y-3 text-sm font-medium">
+              <li>
+                <a href="#problem" class="hover:text-white transition"
+                  >The Challenge</a
+                >
+              </li>
+              <li>
+                <a href="#solution" class="hover:text-white transition"
+                  >Solutions</a
+                >
+              </li>
+              <li>
+                <a href="#architecture" class="hover:text-white transition"
+                  >Architecture</a
+                >
+              </li>
+              <li>
+                <a
+                  href="{% url 'inquiry_form' %}"
+                  class="hover:text-white transition text-blue-400"
+                  >Submit Inquiry</a
+                >
+              </li>
+              <li>
+                <a href="{% url 'login' %}" class="hover:text-white transition"
+                  >User Login</a
+                >
+              </li>
+            </ul>
+          </div>
+
+          <div>
+            <h4
+              class="text-white font-bold uppercase text-sm mb-6 tracking-wider"
+            >
+              Contact
+            </h4>
+            <ul class="space-y-4 text-sm">
+              <li class="flex items-start">
+                <i class="fa-solid fa-phone mt-1 mr-3 text-blue-400"></i>
+                <span class="font-medium">+91-9755592974</span>
+              </li>
+              <li class="flex items-start">
+                <i class="fa-solid fa-envelope mt-1 mr-3 text-blue-400"></i>
+                <a
+                  href="mailto:sales@example.com"
+                  class="hover:text-white transition font-medium"
+                  >sales@example.com</a
+                >
+              </li>
+              <li class="flex items-start">
+                <i
+                  class="fa-solid fa-location-dot mt-1 mr-3 text-blue-400 text-lg"
+                ></i>
+                <span class="leading-relaxed font-medium">
+                  109 Business Center,<br />
+                  Indore, Madhya Pradesh,<br />
+                  India
+                </span>
+              </li>
+            </ul>
+          </div>
+        </div>
+
+        <div
+          class="flex flex-col md:flex-row justify-between items-center text-sm text-gray-500 font-medium"
+        >
+          <p>&copy; 2024 CRM Platform. All rights reserved.</p>
+          <div class="mt-4 md:mt-0 space-x-6">
+            <a href="#" class="hover:text-white transition">Privacy Policy</a>
+            <a href="#" class="hover:text-white transition">Terms of Service</a>
+          </div>
+        </div>
+      </div>
+    </footer>
+
+    <!-- Scripts for animations -->
+    <script>
+      // Reveal elements on scroll
+      function reveal() {
+        var reveals = document.querySelectorAll(".reveal");
+        for (var i = 0; i < reveals.length; i++) {
+          var windowHeight = window.innerHeight;
+          var elementTop = reveals[i].getBoundingClientRect().top;
+          var elementVisible = 100;
+
+          if (elementTop < windowHeight - elementVisible) {
+            reveals[i].classList.add("active");
+          }
+        }
+      }
+      window.addEventListener("scroll", reveal);
+      // Trigger once on load
+      reveal();
+
+      // Navbar scroll effect
+      window.addEventListener("scroll", function () {
+        var navbar = document.getElementById("navbar");
+        if (window.scrollY > 20) {
+          navbar.classList.add("shadow-md");
+          navbar.classList.add("bg-white/95");
+        } else {
+          navbar.classList.remove("shadow-md");
+          navbar.classList.remove("bg-white/95");
+        }
+      });
+
+      // Mobile menu toggle
+      document
+        .getElementById("mobile-menu-btn")
+        .addEventListener("click", function () {
+          var menu = document.getElementById("mobile-menu");
+          if (menu.classList.contains("hidden")) {
+            menu.classList.remove("hidden");
+          } else {
+            menu.classList.add("hidden");
+          }
+        });
+
+      // Set Chatbot URL for landing page usage
+      window.LEADGEN_CHATBOT_SUBMIT_URL = "{% url 'chatbot_submit' %}";
+    </script>
+
+    <!-- Chatbot Widget Entry Point -->
+    <button id="chatbot-fab" class="chatbot-fab" type="button" aria-label="Open chat" style="display: none;">
+        Chat
+    </button>
+    <div id="chatbot-window" class="chatbot-window chatbot-hidden" role="dialog" aria-modal="false" aria-label="Inquiry chat">
+        <div class="chatbot-header">
+            <div class="chatbot-avatar">S</div>
+            <div class="chatbot-title">
+                <div class="chatbot-name">Sales Assistant</div>
+                <div class="chatbot-subtitle">Typically replies instantly</div>
+            </div>
+            <button id="chatbot-close" class="chatbot-close" type="button" aria-label="Close chat">×</button>
+        </div>
+        <div id="chatbot-messages" class="chatbot-messages"></div>
+        <div class="chatbot-inputbar">
+            <input id="chatbot-input" class="chatbot-input" type="text" placeholder="Type a message" autocomplete="off" />
+            <button id="chatbot-send" class="chatbot-send" type="button">Send</button>
+        </div>
+    </div>
+    
+    <script src="{% static 'js/main.js' %}"></script>
+  </body>
+</html>

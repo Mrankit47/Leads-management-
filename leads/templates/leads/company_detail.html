@@ -1,0 +1,282 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ company.name }} | Infrastructure Overview</title>
+    
+    <!-- Theme Fonts and Icons -->
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        outfit: ['Outfit', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        body {
+            background: radial-gradient(circle at top right, #eff6ff 0%, #f8fafc 50%, #dbeafe 100%);
+            min-height: 100vh;
+        }
+
+        .glass-card {
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.5);
+            box-shadow: 0 10px 30px rgba(30, 64, 175, 0.05);
+        }
+
+        .stat-card {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        .stat-card:hover {
+            transform: translateY(-4px);
+            background: white;
+            box-shadow: 0 15px 35px rgba(37, 99, 235, 0.1);
+        }
+
+        .section-header {
+            font-family: 'Outfit', sans-serif;
+            letter-spacing: -0.01em;
+        }
+
+        th {
+            font-family: 'Outfit', sans-serif;
+            letter-spacing: 0.05em;
+        }
+    </style>
+</head>
+
+<body class="font-sans text-slate-800 p-8 lg:p-12">
+
+    <div class="max-w-7xl mx-auto">
+        <!-- PAGE HEADER -->
+        <div class="flex flex-col md:flex-row justify-between items-start md:items-end gap-6 mb-12">
+            <div>
+                <div class="flex items-center gap-4 mb-3">
+                    <div class="w-14 h-14 rounded-2xl bg-white shadow-xl flex items-center justify-center text-blue-600 border border-blue-50">
+                        <i class="fa-solid fa-server text-2xl"></i>
+                    </div>
+                    <div>
+                        <span class="text-[10px] font-black text-blue-500 uppercase tracking-[0.2em] px-2 py-0.5 bg-blue-500/10 rounded">Tenant Module</span>
+                        <h1 class="text-4xl font-outfit font-black text-slate-900 tracking-tight mt-1">{{ company.name }}</h1>
+                    </div>
+                </div>
+                <p class="text-slate-500 font-medium">Detailed infrastructure and data utilization report.</p>
+            </div>
+
+            <a href="{% url 'superadmin_dashboard' %}"
+               class="inline-flex items-center gap-2 bg-slate-900 hover:bg-black text-white px-6 py-3 rounded-xl font-bold text-sm shadow-xl shadow-slate-900/10 transition-all hover:-translate-y-0.5 group">
+                <i class="fa-solid fa-chevron-left text-xs transition-transform group-hover:-translate-x-1"></i>
+                Return to Network Dashboard
+            </a>
+        </div>
+
+        <!-- STATS GRID -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
+            <!-- Admin -->
+            <div class="glass-card stat-card rounded-2xl p-6 border-l-4 border-l-blue-500">
+                <div class="flex justify-between items-start mb-4">
+                    <div class="p-2 bg-blue-50 rounded-lg text-blue-600">
+                        <i class="fa-solid fa-user-shield"></i>
+                    </div>
+                </div>
+                <p class="text-slate-500 text-[10px] font-black uppercase tracking-widest mb-1">Company Admin</p>
+                <p class="text-lg font-black text-slate-900 truncate">{{ company_admin.username }}</p>
+            </div>
+
+            <!-- Total Users -->
+            <div class="glass-card stat-card rounded-2xl p-6 border-l-4 border-l-emerald-500">
+                <div class="flex justify-between items-start mb-4">
+                    <div class="p-2 bg-emerald-50 rounded-lg text-emerald-600">
+                        <i class="fa-solid fa-users"></i>
+                    </div>
+                </div>
+                <p class="text-slate-500 text-[10px] font-black uppercase tracking-widest mb-1">Total Network Users</p>
+                <p class="text-3xl font-black text-slate-900">{{ users|length }}</p>
+            </div>
+
+            <!-- Total Leads -->
+            <div class="glass-card stat-card rounded-2xl p-6 border-l-4 border-l-amber-500">
+                <div class="flex justify-between items-start mb-4">
+                    <div class="p-2 bg-amber-50 rounded-lg text-amber-600">
+                        <i class="fa-solid fa-bullseye"></i>
+                    </div>
+                </div>
+                <p class="text-slate-500 text-[10px] font-black uppercase tracking-widest mb-1">Generated Leads</p>
+                <p class="text-3xl font-black text-slate-900">{{ leads|length }}</p>
+            </div>
+
+            <!-- Total Tickets -->
+            <div class="glass-card stat-card rounded-2xl p-6 border-l-4 border-l-purple-500">
+                <div class="flex justify-between items-start mb-4">
+                    <div class="p-2 bg-purple-50 rounded-lg text-purple-600">
+                        <i class="fa-solid fa-ticket"></i>
+                    </div>
+                </div>
+                <p class="text-slate-500 text-[10px] font-black uppercase tracking-widest mb-1">System Tickets</p>
+                <p class="text-3xl font-black text-slate-900">{{ tickets|length }}</p>
+            </div>
+        </div>
+
+        <!-- TWO COLUMN LAYOUT FOR TABLES -->
+        <div class="space-y-10">
+            
+            <!-- COMPANY ADMIN DETAILS -->
+            <div class="glass-card rounded-3xl p-8 overflow-hidden relative">
+                <div class="flex items-center gap-3 mb-6">
+                    <div class="w-2 h-8 bg-blue-600 rounded-full"></div>
+                    <h2 class="text-2xl font-outfit font-black text-slate-900 tracking-tight">Access Control Profile</h2>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <div class="p-4 rounded-2xl bg-slate-50/50 border border-slate-100">
+                        <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Administrative Alias</p>
+                        <p class="text-lg font-bold text-slate-800">{{ company_admin.username }}</p>
+                    </div>
+                    <div class="p-4 rounded-2xl bg-slate-50/50 border border-slate-100">
+                        <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Communication Endpoint</p>
+                        <p class="text-lg font-bold text-slate-800">{{ company_admin.email }}</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- USERS TABLE -->
+            <div class="glass-card rounded-3xl overflow-hidden shadow-xl shadow-blue-900/5">
+                <div class="p-8 border-b border-slate-100 flex items-center justify-between">
+                    <div class="flex items-center gap-3">
+                        <i class="fa-solid fa-users-gear text-blue-600 text-xl"></i>
+                        <h2 class="text-2xl font-outfit font-black text-slate-900 tracking-tight">Active Human Capital</h2>
+                    </div>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-sm text-left">
+                        <thead>
+                            <tr class="bg-blue-50/50 border-b border-blue-100/50">
+                                <th class="px-8 py-5 text-[10px] font-black text-slate-600 uppercase tracking-widest">Operator</th>
+                                <th class="px-8 py-5 text-[10px] font-black text-slate-600 uppercase tracking-widest">Electronic Mail</th>
+                                <th class="px-8 py-5 text-[10px] font-black text-slate-600 uppercase tracking-widest">System Privileges</th>
+                                <th class="px-8 py-5 text-[10px] font-black text-slate-600 uppercase tracking-widest">Division</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-50">
+                            {% for user in users %}
+                            <tr class="hover:bg-slate-50 transition-colors">
+                                <td class="px-8 py-5 font-black text-slate-900">{{ user.user.username }}</td>
+                                <td class="px-8 py-5 text-slate-500 font-medium">{{ user.user.email }}</td>
+                                <td class="px-8 py-5">
+                                    <span class="inline-flex px-3 py-1 rounded bg-blue-100 text-blue-700 text-[10px] font-black uppercase tracking-widest border border-blue-200">
+                                        {{ user.role }}
+                                    </span>
+                                </td>
+                                <td class="px-8 py-5 text-slate-500 font-bold italic">{{ user.department|default:"Standard" }}</td>
+                            </tr>
+                            {% empty %}
+                            <tr><td colspan="4" class="px-8 py-10 text-center text-slate-400 font-medium italic">Zero authorized personnel detected.</td></tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- LEADS TABLE -->
+            <div class="glass-card rounded-3xl overflow-hidden shadow-xl shadow-amber-900/5">
+                <div class="p-8 border-b border-slate-100 flex items-center justify-between">
+                    <div class="flex items-center gap-3">
+                        <i class="fa-solid fa-magnet text-amber-500 text-xl"></i>
+                        <h2 class="text-2xl font-outfit font-black text-slate-900 tracking-tight">Pipeline Intelligence</h2>
+                    </div>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-sm text-left">
+                        <thead>
+                            <tr class="bg-amber-50/50 border-b border-amber-100/50">
+                                <th class="px-8 py-5 text-[10px] font-black text-slate-600 uppercase tracking-widest">Client Target</th>
+                                <th class="px-8 py-5 text-[10px] font-black text-slate-600 uppercase tracking-widest">Product Vector</th>
+                                <th class="px-8 py-5 text-[10px] font-black text-slate-600 uppercase tracking-widest">Lifecycle Status</th>
+                                <th class="px-8 py-5 text-[10px] font-black text-slate-600 uppercase tracking-widest">Ingestion Date</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-50">
+                            {% for lead in leads %}
+                            <tr class="hover:bg-slate-50 transition-colors">
+                                <td class="px-8 py-5 font-black text-slate-900">{{ lead.name }}</td>
+                                <td class="px-8 py-5 text-slate-500 font-medium">{{ lead.product_name }}</td>
+                                <td class="px-8 py-5">
+                                    <span class="inline-flex px-3 py-1 rounded-md bg-purple-50 text-purple-700 text-[10px] font-black uppercase tracking-widest border border-purple-100">
+                                        {{ lead.status }}
+                                    </span>
+                                </td>
+                                <td class="px-8 py-5 text-slate-400 font-medium text-xs">{{ lead.created_at|date:"d M Y" }}</td>
+                            </tr>
+                            {% empty %}
+                            <tr><td colspan="4" class="px-8 py-10 text-center text-slate-400 font-medium italic">No market traction identified.</td></tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- TICKETS TABLE -->
+            <div class="glass-card rounded-3xl overflow-hidden shadow-xl shadow-rose-900/5">
+                <div class="p-8 border-b border-slate-100 flex items-center justify-between">
+                    <div class="flex items-center gap-3">
+                        <i class="fa-solid fa-screwdriver-wrench text-rose-500 text-xl"></i>
+                        <h2 class="text-2xl font-outfit font-black text-slate-900 tracking-tight">Operational Support</h2>
+                    </div>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-sm text-left">
+                        <thead>
+                            <tr class="bg-rose-50/50 border-b border-rose-100/50">
+                                <th class="px-8 py-5 text-[10px] font-black text-slate-600 uppercase tracking-widest">Protocol ID</th>
+                                <th class="px-8 py-5 text-[10px] font-black text-slate-600 uppercase tracking-widest">Subject Matter</th>
+                                <th class="px-8 py-5 text-[10px] font-black text-slate-600 uppercase tracking-widest">Operational State</th>
+                                <th class="px-8 py-5 text-[10px] font-black text-slate-600 uppercase tracking-widest">Priority Class</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-50">
+                            {% for ticket in tickets %}
+                            <tr class="hover:bg-slate-50 transition-colors">
+                                <td class="px-8 py-5 font-black text-slate-900">{{ ticket.ticket_id }}</td>
+                                <td class="px-8 py-5 text-slate-500 font-medium">{{ ticket.subject }}</td>
+                                <td class="px-8 py-5">
+                                    <span class="inline-flex px-3 py-1 rounded bg-emerald-50 text-emerald-700 text-[10px] font-black uppercase tracking-widest border border-emerald-100">
+                                        {{ ticket.status }}
+                                    </span>
+                                </td>
+                                <td class="px-8 py-5">
+                                    <span class="inline-flex px-3 py-1 rounded bg-rose-50 text-rose-700 text-[10px] font-black uppercase tracking-widest border border-rose-100">
+                                        {{ ticket.priority }}
+                                    </span>
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr><td colspan="4" class="px-8 py-10 text-center text-slate-400 font-medium italic">Operational status nominal. Zero tickets.</td></tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+        </div>
+
+        <p class="text-center text-slate-400 text-[10px] font-black uppercase tracking-[0.2em] mt-16 pb-8">
+            Diagnostic Monitor &copy; 2026 Admin Network
+        </p>
+
+    </div>
+
+</body>
+</html>

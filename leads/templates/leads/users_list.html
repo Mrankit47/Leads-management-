@@ -1,0 +1,125 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User Management | LeadGen Tracker</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .glass-card {
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.4);
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-white via-blue-50 to-blue-100 min-h-screen py-8 px-4 sm:px-6 lg:px-8">
+    <div class="max-w-7xl mx-auto">
+        <!-- Back Link -->
+        <div class="mb-8">
+            <a href="{% if user.is_superuser %}{% url 'superadmin_dashboard' %}{% elif user.userprofile.role == 'admin' %}{% url 'company_admin_dashboard' %}{% elif user.userprofile.role == 'manager' %}{% url 'manager_dashboard' %}{% elif user.userprofile.role == 'editor' or user.userprofile.role == 'employee' or user.userprofile.role == 'hybrid' %}{% url 'employee_dashboard' %}{% else %}{% url 'dashboard' %}{% endif %}" 
+               class="inline-flex items-center text-sm font-bold text-blue-600 hover:text-blue-800 transition-all group">
+                <div class="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center mr-3 group-hover:-translate-x-1 transition-transform">
+                    <i class="fa-solid fa-arrow-left text-xs"></i>
+                </div>
+                Back to Dashboard
+            </a>
+        </div>
+
+        <!-- Header Section -->
+        <div class="mb-10 flex flex-col md:flex-row md:items-center md:justify-between gap-6">
+            <div>
+                <h1 class="text-4xl font-black text-blue-900 tracking-tight flex items-center gap-4">
+                    <i class="fa-solid fa-users-gear text-blue-600"></i> User Management
+                </h1>
+                <p class="mt-2 text-blue-700 font-semibold opacity-70">Monitor and manage access controls for your organization's staff members.</p>
+            </div>
+            
+            {% if user.userprofile.role == 'admin' or user.userprofile.role == 'manager' %}
+            <a href="{% url 'create_user' %}" class="inline-flex items-center px-6 py-3.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-black rounded-2xl shadow-xl shadow-blue-500/20 transition transform active:scale-95 gap-3">
+                <i class="fa-solid fa-plus text-xs"></i>
+                Add New Staff
+            </a>
+            {% endif %}
+        </div>
+
+        <!-- Table Card -->
+        <div class="glass-card shadow-2xl shadow-blue-900/10 rounded-[2.5rem] border-0 overflow-hidden">
+            <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse">
+                    <thead>
+                        <tr class="bg-blue-800/5 whitespace-nowrap">
+                            <th class="px-8 py-5 text-[10px] font-black text-blue-900/40 uppercase tracking-widest border-b border-blue-50">Identity</th>
+                            <th class="px-8 py-5 text-[10px] font-black text-blue-900/40 uppercase tracking-widest border-b border-blue-50">Email Connection</th>
+                            <th class="px-8 py-5 text-[10px] font-black text-blue-900/40 uppercase tracking-widest border-b border-blue-50">Direct Contact</th>
+                            <th class="px-8 py-5 text-[10px] font-black text-blue-900/40 uppercase tracking-widest border-b border-blue-50 text-center">Security Role</th>
+                            <th class="px-8 py-5 text-[10px] font-black text-blue-900/40 uppercase tracking-widest border-b border-blue-50 text-right">Operations</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-blue-50/50">
+                        {% for u in users %}
+                        {% if u.user != user %}
+                        <tr class="hover:bg-blue-50/40 transition-colors group">
+                            <td class="px-8 py-5">
+                                <div class="flex items-center">
+                                    <div class="h-11 w-11 flex-shrink-0 bg-blue-600 text-white rounded-2xl flex items-center justify-center font-black shadow-lg shadow-blue-600/20 group-hover:scale-110 transition-transform">
+                                        {{ u.user.username|make_list|first|upper }}
+                                    </div>
+                                    <div class="ml-4">
+                                        <div class="text-sm font-black text-gray-900">{{ u.user.username }}</div>
+                                        <div class="text-[10px] text-blue-600 font-black uppercase tracking-tighter opacity-70">{{ u.department|default:"General Staff" }}</div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="px-8 py-5 text-sm font-semibold text-gray-600">
+                                {{ u.user.email }}
+                            </td>
+                            <td class="px-8 py-5 text-sm font-semibold text-gray-400 italic">
+                                {{ u.contact|default:"N/A" }}
+                            </td>
+                            <td class="px-8 py-5 text-center">
+                                <span class="px-3 py-1 text-[10px] font-black rounded-lg uppercase tracking-wider
+                                    {% if u.role == 'admin' %}bg-purple-100 text-purple-700 border border-purple-200
+                                    {% elif u.role == 'manager' %}bg-blue-100 text-blue-700 border border-blue-200
+                                    {% elif u.role == 'editor' %}bg-emerald-100 text-emerald-700 border border-emerald-200
+                                    {% else %}bg-gray-100 text-gray-700 border border-gray-200{% endif %}">
+                                    {{ u.role }}
+                                </span>
+                            </td>
+                            <td class="px-8 py-5 text-right space-x-2">
+                                {% if user.userprofile.role == 'admin' or user.userprofile.role == 'manager' or user.userprofile.role == 'editor' %}
+                                <a href="{% url 'edit_user' u.user.id %}" class="inline-flex items-center px-4 py-2 bg-white border border-gray-100 rounded-xl text-blue-600 text-xs font-bold hover:bg-blue-600 hover:text-white shadow-sm transition-all">
+                                    <i class="fa-solid fa-pen-to-square mr-2 text-[10px]"></i> Edit
+                                </a>
+                                {% endif %}
+                                
+                                {% if user.userprofile.role == 'admin' or user.userprofile.role == 'manager' %}
+                                <a href="{% url 'delete_user' u.user.id %}" onclick="return confirm('🚨 Are you sure you want to remove this user? This action is permanent.')"
+                                   class="inline-flex items-center px-4 py-2 bg-red-50 border border-red-100 rounded-xl text-red-600 text-xs font-bold hover:bg-red-600 hover:text-white transition-all">
+                                    <i class="fa-solid fa-trash mr-2 text-[10px]"></i> Remove
+                                </a>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endif %}
+                        {% empty %}
+                        <tr>
+                            <td colspan="5" class="px-8 py-20 text-center">
+                                <div class="flex flex-col items-center">
+                                    <i class="fa-solid fa-user-slash text-gray-200 text-5xl mb-4"></i>
+                                    <p class="text-gray-400 font-bold italic tracking-wide">No team members identified within this project.</p>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

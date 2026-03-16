@@ -1,0 +1,238 @@
+{% extends 'leads/base.html' %}
+{% load static %}
+
+{% block title %}Subscription Plans | LeadGen Tracker{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Premium Theming - Blue & White */
+    .navbar, .footer { display: none !important; }
+
+    body {
+        background: radial-gradient(circle at top right, #eff6ff 0%, #f8fafc 50%, #dbeafe 100%);
+        font-family: 'Outfit', 'Inter', sans-serif;
+        color: #1e293b;
+    }
+
+    .glass-panel {
+        background: rgba(255, 255, 255, 0.7);
+        backdrop-filter: blur(20px);
+        border: 1px solid rgba(255, 255, 255, 0.6);
+        box-shadow: 0 20px 50px rgba(30, 64, 175, 0.05);
+    }
+
+    .plan-card {
+        background: white;
+        border-radius: 2.5rem;
+        transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        border: 1px solid #f1f5f9;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .plan-card:hover {
+        transform: translateY(-12px) scale(1.02);
+        box-shadow: 0 40px 80px rgba(37, 99, 235, 0.1);
+        border-color: #dbeafe;
+    }
+
+    .plan-card.featured {
+        border: 2px solid #2563eb;
+        background: linear-gradient(to bottom, #ffffff, #f0f9ff);
+    }
+
+    .premium-btn {
+        background: #0f172a;
+        color: white;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+        transition: all 0.3s;
+    }
+
+    .premium-btn:hover {
+        background: #2563eb;
+        transform: translateY(-2px);
+        box-shadow: 0 10px 20px rgba(37, 99, 235, 0.3);
+    }
+
+    .active-badge {
+        background: linear-gradient(45deg, #10b981, #059669);
+        box-shadow: 0 4px 12px rgba(16, 185, 129, 0.2);
+    }
+
+    .hero-glow {
+        position: fixed;
+        top: -10%;
+        right: -10%;
+        width: 40vw;
+        height: 40vw;
+        background: radial-gradient(circle, rgba(59, 130, 246, 0.08) 0%, transparent 70%);
+        z-index: -1;
+        pointer-events: none;
+    }
+
+    @keyframes float {
+        0%, 100% { transform: translateY(0); }
+        50% { transform: translateY(-10px); }
+    }
+
+    .floating { animation: float 6s ease-in-out infinite; }
+</style>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;900&display=swap" rel="stylesheet">
+{% endblock %}
+
+{% block content %}
+<div class="hero-glow"></div>
+
+<div class="max-w-7xl mx-auto px-6 lg:px-12 py-16">
+    <!-- Top Navigation -->
+    <div class="mb-10 flex items-center justify-between">
+        <a href="{% url 'company_admin_dashboard' %}" 
+           class="inline-flex items-center text-sm font-bold text-blue-600 hover:text-blue-800 transition-all group">
+            <div class="w-10 h-10 rounded-2xl bg-white shadow-sm flex items-center justify-center mr-3 group-hover:-translate-x-1 transition-transform border border-blue-50">
+                <i class="fa-solid fa-arrow-left text-xs"></i>
+            </div>
+            Back to Dashboard
+        </a>
+    </div>
+
+    <!-- Header -->
+    <div class="text-center mb-20">
+        <div class="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-blue-50 border border-blue-100 mb-6">
+            <span class="w-2 h-2 rounded-full bg-blue-600 animate-pulse"></span>
+            <span class="text-[10px] font-black text-blue-600 uppercase tracking-widest">Enterprise Access</span>
+        </div>
+        <h1 class="text-6xl font-black text-slate-900 tracking-tighter mb-6">
+            Choose Your <span class="text-blue-600">Growth</span> Scale
+        </h1>
+        <p class="text-xl text-slate-500 font-medium max-w-2xl mx-auto leading-relaxed">
+            Select the high-performance architecture that matches your company's lead volume and operational needs.
+        </p>
+    </div>
+
+    <!-- Current Subscription Glass Panel -->
+    <div class="max-w-4xl mx-auto mb-20">
+        <div class="glass-panel p-10 rounded-[3rem] relative overflow-hidden group">
+            <div class="absolute top-0 right-0 p-8 opacity-10 group-hover:opacity-20 transition-opacity">
+                <i class="fa-solid fa-gem text-8xl text-blue-600"></i>
+            </div>
+            
+            <h3 class="text-2xl font-black text-slate-900 mb-8 flex items-center gap-3">
+                <div class="w-10 h-10 rounded-2xl bg-blue-600 flex items-center justify-center text-white text-sm shadow-lg shadow-blue-600/20">
+                    <i class="fa-solid fa-fingerprint"></i>
+                </div>
+                Your Membership Blueprint
+            </h3>
+
+            {% if current_subscription %}
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
+                <div class="space-y-1">
+                    <p class="text-[10px] font-black text-blue-900/30 uppercase tracking-widest">Core Infrastructure</p>
+                    <p class="text-xl font-black text-blue-600">{{ current_subscription.plan.name }}</p>
+                </div>
+                <div class="space-y-1 border-l border-slate-200/50 pl-8">
+                    <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Activation Date</p>
+                    <p class="text-xl font-black text-slate-700">{{ current_subscription.start_date|date:"F d, Y" }}</p>
+                </div>
+                <div class="space-y-1 border-l border-slate-200/50 pl-8">
+                    <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Expiration</p>
+                    <p class="text-xl font-black text-slate-700">{{ current_subscription.end_date|date:"F d, Y" }}</p>
+                </div>
+                <div class="space-y-1 border-l border-slate-200/50 pl-8">
+                    <p class="text-[10px] font-black {% if days_remaining < 7 %}text-rose-400{% else %}text-emerald-400{% endif %} uppercase tracking-widest">Runtime Remaining</p>
+                    <p class="text-3xl font-black {% if days_remaining < 7 %}text-rose-600 animate-pulse{% else %}text-slate-900{% endif %}">
+                        {{ days_remaining }} <span class="text-sm font-bold opacity-30 uppercase">Days</span>
+                    </p>
+                </div>
+            </div>
+            
+            <div class="mt-12 flex flex-wrap gap-4">
+                <a href="#plans" class="bg-blue-600 hover:bg-black text-white px-10 py-4 rounded-2xl font-black text-xs uppercase tracking-widest transition-all shadow-xl shadow-blue-600/10">
+                    Scale Infrastructure
+                </a>
+                <a href="{% url 'subscriptions:renew' %}" class="bg-white hover:bg-slate-50 text-slate-900 border border-slate-100 px-10 py-4 rounded-2xl font-black text-xs uppercase tracking-widest transition-all">
+                    Maintain Uptime
+                </a>
+            </div>
+            {% else %}
+            <div class="py-10 text-center bg-blue-50/50 rounded-3xl border border-dashed border-blue-200">
+                <p class="text-slate-500 font-bold italic tracking-tight">No active instance detected. Activate a core below.</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Plans Grid -->
+    <div id="plans" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 items-stretch">
+        {% for plan in plans %}
+        <div class="plan-card p-10 flex flex-col {% if plan.name == 'Pro' %}featured{% endif %}">
+            {% if plan.name == 'Pro' %}
+            <div class="absolute top-0 right-0 mt-6 -mr-8 rotate-45 bg-blue-600 text-white text-[9px] font-black uppercase py-1 px-12 tracking-[0.3em] shadow-xl">
+                Most Powerful
+            </div>
+            {% endif %}
+
+            <div class="mb-10">
+                <h3 class="text-2xl font-black text-slate-900 mb-2">{{ plan.name }}</h3>
+                <p class="text-xs font-bold text-slate-400 uppercase tracking-widest">Performance Tier</p>
+            </div>
+
+            <div class="mb-10 flex items-baseline">
+                <span class="text-5xl font-black text-slate-900 tracking-tighter">${{ plan.price }}</span>
+                <span class="text-slate-400 text-sm font-bold ml-2 uppercase tracking-widest">/{{ plan.billing_cycle }}</span>
+            </div>
+
+            <div class="mb-10 min-h-[60px]">
+                <p class="text-slate-500 text-sm font-medium leading-relaxed">{{ plan.description }}</p>
+            </div>
+
+            <div class="space-y-6 flex-1 mb-12">
+                <div class="flex items-start gap-4 group">
+                    <div class="w-6 h-6 rounded-lg bg-blue-50 flex items-center justify-center text-blue-600 transition-colors group-hover:bg-blue-600 group-hover:text-white">
+                        <i class="fa-solid fa-users text-[8px]"></i>
+                    </div>
+                    <div>
+                        <p class="text-sm font-black text-slate-900">{{ plan.max_users }} Seat Capacity</p>
+                        <p class="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Team Concurrent Access</p>
+                    </div>
+                </div>
+                <div class="flex items-start gap-4 group">
+                    <div class="w-6 h-6 rounded-lg bg-indigo-50 flex items-center justify-center text-indigo-600 transition-colors group-hover:bg-indigo-600 group-hover:text-white">
+                        <i class="fa-solid fa-bolt text-[8px]"></i>
+                    </div>
+                    <div>
+                        <p class="text-sm font-black text-slate-900">{{ plan.max_leads }} Lead Storage</p>
+                        <p class="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Data Processing Quota</p>
+                    </div>
+                </div>
+                <div class="flex items-start gap-4 group">
+                    <div class="w-6 h-6 rounded-lg bg-emerald-50 flex items-center justify-center text-emerald-600 transition-colors group-hover:bg-emerald-600 group-hover:text-white">
+                        <i class="fa-solid fa-shield-halved text-[8px]"></i>
+                    </div>
+                    <div>
+                        <p class="text-sm font-black text-slate-900">Encrypted DB</p>
+                        <p class="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Enterprise Security</p>
+                    </div>
+                </div>
+            </div>
+
+            <a href="{% url 'subscriptions:subscribe' plan.id %}" 
+               class="premium-btn w-full py-5 rounded-[1.5rem] text-center text-xs shadow-lg shadow-slate-900/10">
+                Deploy {{ plan.name }}
+            </a>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- Support Footer -->
+    <div class="mt-24 text-center">
+        <p class="text-slate-400 text-sm font-bold uppercase tracking-[0.2em] mb-4">Questions about scale?</p>
+        <div class="flex items-center justify-center gap-10">
+            <a href="#" class="text-slate-900 font-black text-xs hover:text-blue-600 transition-colors uppercase tracking-widest">Architecture Docs</a>
+            <a href="#" class="text-slate-900 font-black text-xs hover:text-blue-600 transition-colors uppercase tracking-widest">Contact Sales</a>
+            <a href="{% url 'company_admin_dashboard' %}" class="text-slate-900 font-black text-xs hover:text-blue-600 transition-colors uppercase tracking-widest">Back to Dashboard</a>
+        </div>
+    </div>
+</div>
+{% endblock %}

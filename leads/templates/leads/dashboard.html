@@ -1,0 +1,344 @@
+{% extends 'leads/base.html' %}
+
+{% block title %}Dashboard | LeadGen Tracker{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Hide Navbar and Footer as requested */
+    .navbar, .footer { display: none !important; }
+    
+    body { 
+        background: linear-gradient(135deg, #f8fafc 0%, #eff6ff 50%, #dbeafe 100%);
+        min-height: screen;
+        font-family: 'Inter', sans-serif;
+    }
+
+    .glass-card {
+        background: rgba(255, 255, 255, 0.8);
+        backdrop-filter: blur(12px);
+        border: 1px solid rgba(255, 255, 255, 0.5);
+        box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.07);
+    }
+
+    .stat-card-inner {
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .stat-card-inner:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 12px 24px -8px rgba(30, 64, 175, 0.2);
+    }
+
+    .filter-btn-active {
+        background-color: #1e40af !important;
+        color: white !important;
+        box-shadow: 0 4px 12px rgba(30, 64, 175, 0.2);
+    }
+
+    /* Custom Scrollbar */
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+    ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+</style>
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet" />
+{% endblock %}
+
+{% block content %}
+<div class="min-h-screen py-8 px-4 sm:px-6 lg:px-12">
+    <!-- Top Bar with Back Connection -->
+    <div class="max-w-[1600px] mx-auto mb-10 flex items-center justify-between">
+        <a href="{% if user.userprofile.role == 'admin' %}{% url 'company_admin_dashboard' %}{% elif user.userprofile.role == 'manager' %}{% url 'manager_dashboard' %}{% else %}{% url 'home' %}{% endif %}" 
+           class="inline-flex items-center text-sm font-bold text-blue-600 hover:text-blue-800 transition-all group">
+            <div class="w-10 h-10 rounded-2xl bg-white shadow-sm flex items-center justify-center mr-3 group-hover:-translate-x-1 transition-transform border border-blue-50">
+                <i class="fa-solid fa-arrow-left text-xs"></i>
+            </div>
+            Back to Overview
+        </a>
+
+        <div class="flex items-center gap-4 bg-white/40 backdrop-blur-md px-4 py-2 rounded-2xl border border-white/60">
+            <div class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>
+            <span class="text-xs font-black text-blue-900 uppercase tracking-widest">Live System Feed</span>
+        </div>
+    </div>
+
+    <div class="max-w-[1600px] mx-auto space-y-10">
+        
+        <!-- Metrics Grid -->
+        <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-6">
+            <!-- Total Leads -->
+            <div class="glass-card rounded-[2rem] p-6 stat-card-inner relative overflow-hidden group">
+                <div class="absolute top-0 right-0 w-20 h-20 bg-blue-500/5 rounded-full -mr-10 -mt-10"></div>
+                <p class="text-[10px] font-black text-blue-900/40 uppercase tracking-widest mb-1">Total Leads</p>
+                <div class="flex items-end justify-between">
+                    <h3 class="text-3xl font-black text-blue-900">{{ stats.total }}</h3>
+                    <div class="p-2 bg-blue-50 rounded-xl text-blue-600"><i class="fa-solid fa-users text-xs"></i></div>
+                </div>
+            </div>
+
+            <!-- Inquiry -->
+            <div class="glass-card rounded-[2rem] p-6 stat-card-inner relative overflow-hidden">
+                <p class="text-[10px] font-black text-blue-900/40 uppercase tracking-widest mb-1">Inquiries</p>
+                <div class="flex items-end justify-between">
+                    <h3 class="text-3xl font-black text-blue-900">{{ stats.inquiry }}</h3>
+                    <div class="p-2 bg-amber-50 rounded-xl text-amber-600"><i class="fa-solid fa-comment-dots text-xs"></i></div>
+                </div>
+            </div>
+
+            <!-- Proposal -->
+            <div class="glass-card rounded-[2rem] p-6 stat-card-inner relative overflow-hidden">
+                <p class="text-[10px] font-black text-blue-900/40 uppercase tracking-widest mb-1">Proposals</p>
+                <div class="flex items-end justify-between">
+                    <h3 class="text-3xl font-black text-blue-900">{{ stats.proposal }}</h3>
+                    <div class="p-2 bg-indigo-50 rounded-xl text-indigo-600"><i class="fa-solid fa-file-invoice text-xs"></i></div>
+                </div>
+            </div>
+
+            <!-- Negotiation -->
+            <div class="glass-card rounded-[2rem] p-6 stat-card-inner relative overflow-hidden">
+                <p class="text-[10px] font-black text-blue-900/40 uppercase tracking-widest mb-1">Negotiation</p>
+                <div class="flex items-end justify-between">
+                    <h3 class="text-3xl font-black text-blue-900">{{ stats.negotiation }}</h3>
+                    <div class="p-2 bg-purple-50 rounded-xl text-purple-600"><i class="fa-solid fa-handshake text-xs"></i></div>
+                </div>
+            </div>
+
+            <!-- Closer -->
+            <div class="glass-card rounded-[2rem] p-6 stat-card-inner relative overflow-hidden">
+                <p class="text-[10px] font-black text-blue-900/40 uppercase tracking-widest mb-1">Closers</p>
+                <div class="flex items-end justify-between">
+                    <h3 class="text-3xl font-black text-blue-900">{{ stats.closer }}</h3>
+                    <div class="p-2 bg-emerald-50 rounded-xl text-emerald-600"><i class="fa-solid fa-circle-check text-xs"></i></div>
+                </div>
+            </div>
+
+            <!-- Invoice -->
+            <div class="glass-card rounded-[2rem] p-6 stat-card-inner relative overflow-hidden">
+                <p class="text-[10px] font-black text-blue-900/40 uppercase tracking-widest mb-1">Invoices</p>
+                <div class="flex items-end justify-between">
+                    <h3 class="text-3xl font-black text-blue-900">{{ stats.invoice }}</h3>
+                    <div class="p-2 bg-blue-100 rounded-xl text-blue-800"><i class="fa-solid fa-receipt text-xs"></i></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Ticket Source Grid -->
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+            <div class="md:col-span-1 bg-white/60 p-6 rounded-[2rem] border border-white flex flex-col justify-center">
+                <h4 class="text-xl font-black text-blue-900 tracking-tight leading-tight">Interaction<br>Sources</h4>
+                <p class="text-xs font-semibold text-blue-600/60 mt-2">Distribution of incoming traffic channels.</p>
+            </div>
+            
+            <div class="glass-card p-4 rounded-[1.5rem] flex items-center gap-4">
+                <div class="w-12 h-12 rounded-xl bg-blue-600 text-white flex items-center justify-center"><i class="fa-solid fa-globe"></i></div>
+                <div>
+                    <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Web Form</p>
+                    <p class="text-xl font-black text-blue-900">{{ ticket_stats.web }}</p>
+                </div>
+            </div>
+
+            <div class="glass-card p-4 rounded-[1.5rem] flex items-center gap-4">
+                <div class="w-12 h-12 rounded-xl bg-indigo-600 text-white flex items-center justify-center"><i class="fa-solid fa-robot"></i></div>
+                <div>
+                    <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Chatbot</p>
+                    <p class="text-xl font-black text-blue-900">{{ ticket_stats.chatbot }}</p>
+                </div>
+            </div>
+
+            <div class="glass-card p-4 rounded-[1.5rem] flex items-center gap-4">
+                <div class="w-12 h-12 rounded-xl bg-slate-800 text-white flex items-center justify-center"><i class="fa-solid fa-envelope"></i></div>
+                <div>
+                    <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Email</p>
+                    <p class="text-xl font-black text-blue-900">{{ ticket_stats.email }}</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Filters & Table Section -->
+        <div class="glass-card rounded-[2.5rem] border-0 overflow-hidden shadow-2xl shadow-blue-900/5">
+            <div class="p-8 border-b border-blue-50 bg-white/40 flex flex-col lg:flex-row lg:items-center justify-between gap-8">
+                <div class="space-y-6 flex-1">
+                    <!-- Status Filter -->
+                    <div>
+                        <span class="block text-[10px] font-black text-blue-900/40 uppercase tracking-widest mb-3 ml-1">Lead Lifecycle Status</span>
+                        <div class="flex flex-wrap gap-2">
+                            <a href="{% url 'dashboard' %}{% if source_filter or assigned_filter %}?{% if source_filter %}source={{ source_filter }}{% endif %}{% if source_filter and assigned_filter %}&{% endif %}{% if assigned_filter %}assigned={{ assigned_filter }}{% endif %}{% endif %}" 
+                               class="px-4 py-2 rounded-xl text-xs font-bold transition-all {% if not status_filter %}filter-btn-active{% else %}bg-white border border-gray-100 text-gray-500 hover:border-blue-200{% endif %}">
+                                All Leads
+                            </a>
+                            {% for status_val, status_name in tickets.0.lead.STATUS_CHOICES %}
+                            <a href="{% url 'dashboard' %}?status={{ status_val }}{% if source_filter %}&source={{ source_filter }}{% endif %}{% if assigned_filter %}&assigned={{ assigned_filter }}{% endif %}" 
+                               class="px-4 py-2 rounded-xl text-xs font-bold transition-all {% if status_filter == status_val %}filter-btn-active{% else %}bg-white border border-gray-100 text-gray-500 hover:border-blue-200{% endif %}">
+                                {{ status_name }}
+                            </a>
+                            {% endfor %}
+                        </div>
+                    </div>
+
+                    <!-- Source Filter -->
+                    <div>
+                        <span class="block text-[10px] font-black text-blue-900/40 uppercase tracking-widest mb-3 ml-1">Traffic Origin</span>
+                        <div class="flex flex-wrap gap-2">
+                            <a href="{% url 'dashboard' %}{% if status_filter or assigned_filter %}?{% if status_filter %}status={{ status_filter }}{% endif %}{% if status_filter and assigned_filter %}&{% endif %}{% if assigned_filter %}assigned={{ assigned_filter }}{% endif %}{% endif %}" 
+                               class="px-4 py-2 rounded-xl text-xs font-bold transition-all {% if not source_filter %}filter-btn-active{% else %}bg-white border border-gray-100 text-gray-500 hover:border-blue-200{% endif %}">
+                                All Channels
+                            </a>
+                            <a href="{% url 'dashboard' %}?source=web{% if status_filter %}&status={{ status_filter }}{% endif %}{% if assigned_filter %}&assigned={{ assigned_filter }}{% endif %}" 
+                               class="px-4 py-2 rounded-xl text-xs font-bold transition-all {% if source_filter == 'web' %}filter-btn-active{% else %}bg-white border border-gray-100 text-gray-500 hover:border-blue-200{% endif %}">
+                                Web Form
+                            </a>
+                            <a href="{% url 'dashboard' %}?source=chatbot{% if status_filter %}&status={{ status_filter }}{% endif %}{% if assigned_filter %}&assigned={{ assigned_filter }}{% endif %}" 
+                               class="px-4 py-2 rounded-xl text-xs font-bold transition-all {% if source_filter == 'chatbot' %}filter-btn-active{% else %}bg-white border border-gray-100 text-gray-500 hover:border-blue-200{% endif %}">
+                                Chatbot
+                            </a>
+                            <a href="{% url 'dashboard' %}?source=email{% if status_filter %}&status={{ status_filter }}{% endif %}{% if assigned_filter %}&assigned={{ assigned_filter }}{% endif %}" 
+                               class="px-4 py-2 rounded-xl text-xs font-bold transition-all {% if source_filter == 'email' %}filter-btn-active{% else %}bg-white border border-gray-100 text-gray-500 hover:border-blue-200{% endif %}">
+                                Email Inflow
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Assignment Toggle -->
+                <div class="bg-blue-900 p-6 rounded-[2rem] min-w-[240px]">
+                    <span class="block text-[10px] font-black text-blue-100/40 uppercase tracking-widest mb-4">Ownership Filter</span>
+                    <div class="flex flex-col gap-3">
+                        <a href="{% url 'dashboard' %}{% if status_filter or source_filter %}?{% if status_filter %}status={{ status_filter }}{% endif %}{% if status_filter and source_filter %}&{% endif %}{% if source_filter %}source={{ source_filter }}{% endif %}{% endif %}" 
+                           class="flex items-center justify-between px-4 py-3 rounded-2xl text-[11px] font-black uppercase transition-all {% if not assigned_filter %}bg-blue-600 text-white shadow-lg shadow-blue-600/20{% else %}bg-white/10 text-blue-200 hover:bg-white/20{% endif %}">
+                            <span>Organization Wide</span>
+                            <i class="fa-solid fa-layer-group opacity-60"></i>
+                        </a>
+                        <a href="{% url 'dashboard' %}?assigned=me{% if status_filter %}&status={{ status_filter }}{% endif %}{% if source_filter %}&source={{ source_filter }}{% endif %}" 
+                           class="flex items-center justify-between px-4 py-3 rounded-2xl text-[11px] font-black uppercase transition-all {% if assigned_filter == 'me' %}bg-blue-600 text-white shadow-lg shadow-blue-600/20{% else %}bg-white/10 text-blue-200 hover:bg-white/20{% endif %}">
+                            <span>My Assignments</span>
+                            <i class="fa-solid fa-user-check opacity-60"></i>
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Enhanced Table -->
+            <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse">
+                    <thead>
+                        <tr class="bg-blue-800/5 whitespace-nowrap">
+                            <th class="px-8 py-5 text-[10px] font-black text-blue-900/40 uppercase tracking-widest border-b border-blue-50">Identity</th>
+                            <th class="px-8 py-5 text-[10px] font-black text-blue-900/40 uppercase tracking-widest border-b border-blue-50">Product Intent</th>
+                            <th class="px-8 py-5 text-[10px] font-black text-blue-900/40 uppercase tracking-widest border-b border-blue-50 text-center">Lifecycle</th>
+                            <th class="px-8 py-5 text-[10px] font-black text-blue-900/40 uppercase tracking-widest border-b border-blue-50 text-center">Source</th>
+                            <th class="px-8 py-5 text-[10px] font-black text-blue-900/40 uppercase tracking-widest border-b border-blue-50">Assigned To</th>
+                            <th class="px-8 py-5 text-[10px] font-black text-blue-900/40 uppercase tracking-widest border-b border-blue-50 text-right">Activity</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-blue-50/50">
+                        {% for ticket in tickets %}
+                        <tr class="hover:bg-blue-50/40 transition-colors group">
+                            <td class="px-8 py-6">
+                                <div class="flex items-center">
+                                    <div class="w-10 h-10 rounded-2xl bg-blue-100 flex items-center justify-center font-black text-blue-700 shadow-sm mr-4 group-hover:bg-blue-600 group-hover:text-white transition-all">
+                                        #{{ ticket.id }}
+                                    </div>
+                                    <div>
+                                        <div class="text-sm font-black text-blue-900 group-hover:text-blue-700 transition-colors">{{ ticket.lead.name }}</div>
+                                        <div class="text-[10px] font-bold text-gray-400 group-hover:text-blue-600 transition-colors">{{ ticket.customer_email }}</div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="px-8 py-6">
+                                <div class="text-xs font-bold text-slate-600 uppercase tracking-tight">{{ ticket.lead.product_name|default:"General Inquiry" }}</div>
+                            </td>
+                            <td class="px-8 py-6 text-center">
+                                <span class="px-3 py-1 text-[10px] font-black rounded-lg uppercase tracking-wider
+                                    {% if ticket.lead.status == 'inquiry' %}bg-amber-100 text-amber-700
+                                    {% elif ticket.lead.status == 'proposal' %}bg-indigo-100 text-indigo-700
+                                    {% elif ticket.lead.status == 'negotiation' %}bg-purple-100 text-purple-700
+                                    {% elif ticket.lead.status == 'closer' %}bg-emerald-100 text-emerald-700
+                                    {% elif ticket.lead.status == 'invoice' %}bg-blue-100 text-blue-700
+                                    {% else %}bg-gray-100 text-gray-700{% endif %}">
+                                    {{ ticket.lead.get_status_display }}
+                                </span>
+                            </td>
+                            <td class="px-8 py-6 text-center">
+                                <div class="flex items-center justify-center">
+                                    {% if ticket.source == 'web' %}
+                                    <i class="fa-solid fa-globe text-blue-400 text-sm" title="Web"></i>
+                                    {% elif ticket.source == 'chatbot' %}
+                                    <i class="fa-solid fa-robot text-indigo-400 text-sm" title="Chatbot"></i>
+                                    {% elif ticket.source == 'email' %}
+                                    <i class="fa-solid fa-envelope text-slate-400 text-sm" title="Email"></i>
+                                    {% endif %}
+                                </div>
+                            </td>
+                            <td class="px-8 py-6">
+                                <div class="flex items-center gap-2">
+                                    <div class="w-6 h-6 rounded-full bg-slate-100 border border-white flex items-center justify-center text-[10px] font-black text-slate-400">
+                                        {% if ticket.lead.assigned_to %}
+                                            <i class="fa-solid fa-user-check text-blue-600"></i>
+                                        {% else %}
+                                            <i class="fa-solid fa-user-slash text-gray-300"></i>
+                                        {% endif %}
+                                    </div>
+                                    <span class="text-xs font-bold {% if ticket.lead.assigned_to %}text-slate-700{% else %}text-gray-300 italic{% endif %}">
+                                        {% if ticket.lead.assigned_to %}{{ ticket.lead.assigned_to.get_full_name|default:ticket.lead.assigned_to.username }}{% else %}Unassigned{% endif %}
+                                    </span>
+                                </div>
+                            </td>
+                            <td class="px-8 py-6 text-right">
+                                <a href="{% url 'lead_detail' ticket.lead.id %}" class="inline-flex items-center px-4 py-2 bg-white border border-blue-50 rounded-xl text-blue-600 text-[11px] font-black uppercase hover:bg-blue-600 hover:text-white hover:border-blue-600 transition-all shadow-sm">
+                                    Details <i class="fa-solid fa-arrow-right-long ml-2"></i>
+                                </a>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="6" class="px-8 py-24 text-center">
+                                <div class="flex flex-col items-center">
+                                    <div class="w-20 h-20 rounded-full bg-blue-50 flex items-center justify-center mb-4 text-blue-200">
+                                        <i class="fa-solid fa-magnifying-glass text-3xl"></i>
+                                    </div>
+                                    <p class="text-blue-900 font-black text-xl mb-1 mt-2">No results matching filters.</p>
+                                    <p class="text-sm font-semibold text-blue-600/40">Try adjusting your status or source parameters.</p>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Modern Pagination -->
+            {% if tickets.has_other_pages %}
+            <div class="p-8 bg-white/40 border-t border-blue-50 flex items-center justify-between">
+                <span class="text-xs font-black text-blue-900/40 uppercase tracking-widest">
+                    Page {{ tickets.number }} of {{ tickets.paginator.num_pages }}
+                </span>
+                
+                <div class="flex gap-2">
+                    {% if tickets.has_previous %}
+                        <a href="?page=1{% if status_filter %}&status={{ status_filter }}{% endif %}{% if source_filter %}&source={{ source_filter }}{% endif %}{% if assigned_filter %}&assigned={{ assigned_filter }}{% endif %}" 
+                           class="w-10 h-10 rounded-xl bg-white border border-blue-50 flex items-center justify-center text-blue-600 hover:bg-blue-600 hover:text-white transition-all shadow-sm">
+                            <i class="fa-solid fa-angles-left text-xs"></i>
+                        </a>
+                        <a href="?page={{ tickets.previous_page_number }}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if source_filter %}&source={{ source_filter }}{% endif %}{% if assigned_filter %}&assigned={{ assigned_filter }}{% endif %}" 
+                           class="w-10 h-10 rounded-xl bg-white border border-blue-50 flex items-center justify-center text-blue-600 hover:bg-blue-600 hover:text-white transition-all shadow-sm">
+                            <i class="fa-solid fa-angle-left text-xs"></i>
+                        </a>
+                    {% endif %}
+                    
+                    {% if tickets.has_next %}
+                        <a href="?page={{ tickets.next_page_number }}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if source_filter %}&source={{ source_filter }}{% endif %}{% if assigned_filter %}&assigned={{ assigned_filter }}{% endif %}" 
+                           class="w-10 h-10 rounded-xl bg-white border border-blue-50 flex items-center justify-center text-blue-600 hover:bg-blue-600 hover:text-white transition-all shadow-sm">
+                            <i class="fa-solid fa-angle-right text-xs"></i>
+                        </a>
+                        <a href="?page={{ tickets.paginator.num_pages }}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if source_filter %}&source={{ source_filter }}{% endif %}{% if assigned_filter %}&assigned={{ assigned_filter }}{% endif %}" 
+                           class="w-10 h-10 rounded-xl bg-white border border-blue-50 flex items-center justify-center text-blue-600 hover:bg-blue-600 hover:text-white transition-all shadow-sm">
+                            <i class="fa-solid fa-angles-right text-xs"></i>
+                        </a>
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

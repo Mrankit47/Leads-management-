@@ -1,0 +1,180 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ role }} Dashboard - {{ company.name }}</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .sidebar { background: #0f172a; }
+        .card-glass { background: rgba(255, 255, 255, 0.9); backdrop-filter: blur(10px); }
+        .btn-premium { background: linear-gradient(135deg, #1e40af, #3b82f6); transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+        .btn-premium:hover { transform: translateY(-2px); box-shadow: 0 10px 15px -3px rgba(30, 64, 175, 0.3); }
+    </style>
+</head>
+<body class="bg-slate-50 min-h-screen flex">
+
+    <!-- SIDEBAR -->
+    <aside class="w-72 sidebar min-h-screen fixed left-0 top-0 text-white p-6 flex flex-col justify-between z-50 shadow-2xl">
+        <div>
+            <!-- Header/Logo Area -->
+            <div class="mb-10 text-center">
+                <div class="w-16 h-16 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-2xl mx-auto flex items-center justify-center text-2xl font-black shadow-lg mb-4">
+                    {{ company.name|make_list|first|upper }}
+                </div>
+                <h2 class="text-xl font-extrabold tracking-tight">{{ company.name }}</h2>
+                <div class="inline-block px-3 py-1 rounded-full bg-blue-500/20 text-blue-400 text-[10px] font-bold uppercase tracking-wider mt-2 border border-blue-500/30">
+                    {{ role }} Panel
+                </div>
+            </div>
+
+            <!-- Profile Shortcut Icon -->
+            <div class="mb-8 flex justify-center">
+                <a href="{% url 'employee_profile' %}" class="w-12 h-12 rounded-xl bg-gradient-to-tr from-blue-500 to-blue-700 flex items-center justify-center text-lg font-bold shadow-md hover:scale-110 transition-transform ring-2 ring-blue-500/20">
+                    {{ user.username|make_list|first|upper }}
+                </a>
+            </div>
+
+
+            <!-- Navigation -->
+            <nav class="space-y-2">
+                <a href="{% url 'employee_dashboard' %}" class="flex items-center gap-3 p-3 rounded-xl bg-blue-600/10 text-blue-400 font-bold text-sm border border-blue-600/20 transition-all">
+                    <i class="fas fa-th-large w-5"></i> Dashboard
+                </a>
+                <a href="{% url 'employee_profile' %}" class="flex items-center gap-3 p-3 rounded-xl text-slate-400 hover:bg-white/5 hover:text-white font-semibold text-sm transition-all">
+                    <i class="fas fa-user-circle w-5"></i> Personal Profile
+                </a>
+                <a href="{% url 'create_ticket' %}" class="flex items-center gap-3 p-3 rounded-xl text-slate-400 hover:bg-white/5 hover:text-white font-semibold text-sm transition-all">
+                    <i class="fas fa-plus-circle w-5"></i> New Ticket
+                </a>
+                <a href="{% url 'dashboard' %}" class="flex items-center gap-3 p-3 rounded-xl text-slate-400 hover:bg-white/5 hover:text-white font-semibold text-sm transition-all">
+                    <i class="fas fa-ticket-alt w-5"></i> My Tickets
+                </a>
+            </nav>
+        </div>
+
+        <!-- Footer/Logout -->
+        <div class="pt-6 border-t border-white/5">
+            <form method="POST" action="{% url 'logout' %}">
+                {% csrf_token %}
+                <button class="w-full flex items-center justify-center gap-3 p-4 rounded-xl bg-red-500/10 text-red-400 hover:bg-red-500 hover:text-white font-bold text-sm transition-all">
+                    <i class="fas fa-sign-out-alt"></i> Logout
+                </button>
+            </form>
+        </div>
+    </aside>
+
+    <!-- MAIN CONTENT -->
+    <main class="flex-1 ml-72 p-10 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')]">
+        
+        <!-- Top Bar -->
+        <header class="flex justify-between items-center mb-12">
+            <div>
+                <h1 class="text-4xl font-black text-slate-900 tracking-tight">{{ role }} Dashboard</h1>
+                <p class="text-slate-500 font-medium mt-1 italic">Welcome back, {{ user.first_name|default:user.username }}!</p>
+            </div>
+            <div class="flex items-center gap-6">
+                <div class="text-right">
+                    <p class="text-sm font-bold text-slate-900">{{ full_name }}</p>
+                    <p class="text-xs font-semibold text-blue-600 uppercase tracking-widest">{{ company.name }}</p>
+                </div>
+                <a href="{% url 'employee_profile' %}" class="w-12 h-12 rounded-full border-2 border-white shadow-lg bg-blue-100 flex items-center justify-center text-blue-700 font-black overflow-hidden hover:scale-110 transition-transform">
+                    {{ user.username|make_list|first|upper }}
+                </a>
+            </div>
+        </header>
+
+        <!-- Stats/Content Grid -->
+        <div class="grid grid-cols-1 gap-10">
+            
+            <!-- Welcome Card -->
+            <div class="bg-gradient-to-r from-blue-700 to-indigo-800 rounded-3xl p-10 text-white shadow-2xl relative overflow-hidden">
+                <div class="relative z-10 flex flex-col md:flex-row justify-between items-center">
+                    <div class="mb-6 md:mb-0">
+                        <h2 class="text-3xl font-black mb-2">Manage your tasks effortlessly</h2>
+                        <p class="text-blue-100 font-medium text-lg leading-relaxed max-w-xl">
+                            You currently have <span class="font-black underline decoration-blue-400 decoration-2 underline-offset-4">{{ tickets.count }}</span> assigned tickets waiting for your attention.
+                        </p>
+                    </div>
+                    <a href="{% url 'create_ticket' %}" class="px-8 py-4 bg-white text-blue-800 font-black rounded-2xl shadow-xl hover:scale-105 transition-all text-center">
+                        <i class="fas fa-plus mr-2"></i> Create New Ticket
+                    </a>
+                </div>
+                <!-- Decorative element -->
+                <div class="absolute -right-10 -bottom-10 w-64 h-64 bg-white/10 rounded-full blur-3xl"></div>
+            </div>
+
+            <!-- Tickets Section -->
+            <div class="bg-white rounded-3xl shadow-xl border border-slate-200 overflow-hidden">
+                <div class="p-8 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
+                    <div>
+                        <h3 class="text-xl font-black text-slate-900">Recent Assigned Tickets</h3>
+                        <p class="text-xs text-slate-400 font-bold uppercase tracking-wider mt-1">Directly assigned to you</p>
+                    </div>
+                </div>
+                <div class="overflow-x-auto p-4">
+                    <table class="w-full text-left">
+                        <thead>
+                            <tr class="text-[10px] font-black uppercase tracking-widest text-slate-400">
+                                <th class="px-6 py-4">Subject</th>
+                                <th class="px-6 py-4 text-center">Status</th>
+                                <th class="px-6 py-4 text-center">Priority</th>
+                                <th class="px-6 py-4 text-right">Date</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-50">
+                            {% for t in tickets|slice:":15" %}
+                            <tr class="hover:bg-slate-50/80 transition-all rounded-xl">
+                                <td class="px-6 py-5">
+                                    <div class="flex items-center gap-4">
+                                        <div class="w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center text-slate-400">
+                                            <i class="fas fa-ticket-alt"></i>
+                                        </div>
+                                        <div>
+                                            <div class="text-sm font-black text-slate-900 mb-0.5">{{ t.subject }}</div>
+                                            <div class="text-[10px] text-slate-400 font-bold italic">Ref: #{{ t.id }}</div>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td class="px-6 py-5 text-center">
+                                    <span class="px-3 py-1 text-[10px] font-black rounded-full uppercase tracking-tighter shadow-sm
+                                        {% if t.status == 'open' %}bg-green-100 text-green-700
+                                        {% elif t.status == 'closed' %}bg-slate-100 text-slate-500
+                                        {% else %}bg-blue-100 text-blue-700{% endif %}">
+                                        {{ t.status }}
+                                    </span>
+                                </td>
+                                <td class="px-6 py-5 text-center">
+                                    <span class="text-[10px] font-black uppercase tracking-widest 
+                                        {% if t.priority == 'high' or t.priority == 'critical' %}bg-red-50 text-red-600 px-3 py-1 rounded-full
+                                        {% else %}text-slate-400{% endif %}">
+                                        {{ t.priority }}
+                                    </span>
+                                </td>
+                                <td class="px-6 py-5 text-right font-bold text-slate-400 text-xs">
+                                    {{ t.created_at|date:"M d, Y" }}
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="4" class="px-6 py-12 text-center">
+                                    <div class="w-20 h-20 bg-slate-100 rounded-full flex items-center justify-center mx-auto text-slate-300 text-3xl mb-4">
+                                        <i class="fas fa-inbox"></i>
+                                    </div>
+                                    <p class="text-slate-400 font-black italic">No tickets assigned to you yet.</p>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </main>
+
+</body>
+</html>

@@ -1,0 +1,198 @@
+{% extends 'leads/base.html' %}
+
+{% block title %}Submit Inquiry - LeadGen Tracker{% endblock %}
+
+{% block extra_css %}
+<!-- Select2 CSS for searchable dropdown -->
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet" />
+<style>
+    .glass-card {
+        background: rgba(255, 255, 255, 0.95);
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+    .select2-container--default .select2-selection--single {
+        height: 48px;
+        border: 1px solid #e2e8f0;
+        border-radius: 12px;
+        padding: 8px 12px;
+        font-size: 0.95rem;
+        background-color: #fff;
+        display: flex;
+        align-items: center;
+        transition: all 0.2s;
+    }
+    .select2-container--default.select2-container--focus .select2-selection--single {
+        border-color: #3b82f6;
+        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+    }
+    .select2-container--default .select2-selection--single .select2-selection__rendered {
+        color: #1e293b;
+        line-height: normal;
+        padding: 0;
+    }
+    .select2-container--default .select2-selection--single .select2-selection__arrow {
+        height: 46px;
+    }
+    .select2-container {
+        width: 100% !important;
+    }
+    .select2-dropdown {
+        border-radius: 12px;
+        border: 1px solid #e2e8f0;
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+        overflow: hidden;
+    }
+    .select2-container--default .select2-results__option--highlighted[aria-selected] {
+        background-color: #1e40af;
+    }
+    .select2-search--dropdown .select2-search__field {
+        border-radius: 8px;
+        border: 1px solid #e2e8f0;
+        padding: 8px 12px;
+        font-size: 0.9rem;
+    }
+    /* Hide navbar and footer on inquiry form page */
+    .navbar, .footer {
+        display: none;
+    }
+    body {
+        background: linear-gradient(135deg, #ffffff 0%, #eff6ff 50%, #dbeafe 100%);
+        min-height: 100vh;
+    }
+    .primary-btn {
+        background-color: #1e40af;
+    }
+    .primary-btn:hover {
+        background-color: #1e3a8a;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="min-h-screen py-12 px-4 sm:px-6 lg:px-8 flex items-center justify-center">
+    <div class="max-w-2xl w-full">
+        <!-- Back Link -->
+        <div class="mb-6 flex justify-between items-center px-4">
+            <a href="{% url 'home' %}" class="inline-flex items-center text-sm font-semibold text-blue-600 hover:text-blue-800 transition-colors">
+                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
+                Back to Home
+            </a>
+            <span class="text-xs text-gray-400 font-bold uppercase tracking-widest">Inquiry Portal</span>
+        </div>
+
+        <div class="glass-card shadow-2xl rounded-3xl overflow-hidden border border-white/40">
+            <div class="bg-blue-800 p-8 text-white text-center relative overflow-hidden">
+                <!-- Abstract Design Elements -->
+                <div class="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -mr-16 -mt-16 blur-2xl"></div>
+                <div class="absolute bottom-0 left-0 w-24 h-24 bg-blue-400/20 rounded-full -ml-12 -mb-12 blur-xl"></div>
+                
+                <h1 class="text-3xl font-extrabold tracking-tight relative z-10">Product Inquiry Form</h1>
+                <p class="text-blue-100 mt-2 text-sm font-medium relative z-10 opacity-90">Fill out the form below and our sales team will contact you soon!</p>
+            </div>
+            
+            <div class="p-8 sm:p-10 bg-white/80">
+                <form method="post" class="space-y-6">
+                    {% csrf_token %}
+                    
+                    <div>
+                        <label for="{{ form.name.id_for_label }}" class="block text-sm font-bold text-gray-700 mb-2">Full Name <span class="text-red-500">*</span></label>
+                        <div class="relative">
+                            <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                                <i class="fa-solid fa-user text-gray-400 text-sm"></i>
+                            </div>
+                            <input type="text" name="name" id="{{ form.name.id_for_label }}" value="{{ form.name.value|default:'' }}" class="block w-full pl-10 pr-4 py-3 border border-gray-200 rounded-xl text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all" placeholder="Enter your full name" required>
+                        </div>
+                        {% if form.name.errors %}
+                            <p class="mt-2 text-xs font-bold text-red-600">{{ form.name.errors.0 }}</p>
+                        {% endif %}
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                        <div>
+                            <label for="{{ form.email.id_for_label }}" class="block text-sm font-bold text-gray-700 mb-2">Email Address <span class="text-red-500">*</span></label>
+                            <div class="relative">
+                                <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                                    <i class="fa-solid fa-envelope text-gray-400 text-sm"></i>
+                                </div>
+                                <input type="email" name="email" id="{{ form.email.id_for_label }}" value="{{ form.email.value|default:'' }}" class="block w-full pl-10 pr-4 py-3 border border-gray-200 rounded-xl text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all" placeholder="name@company.com" required>
+                            </div>
+                            {% if form.email.errors %}
+                                <p class="mt-2 text-xs font-bold text-red-600">{{ form.email.errors.0 }}</p>
+                            {% endif %}
+                        </div>
+
+                        <div>
+                            <label for="{{ form.phone.id_for_label }}" class="block text-sm font-bold text-gray-700 mb-2">Phone Number <span class="text-red-500">*</span></label>
+                            <div class="relative">
+                                <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                                    <i class="fa-solid fa-phone text-gray-400 text-sm"></i>
+                                </div>
+                                <input type="text" name="phone" id="{{ form.phone.id_for_label }}" value="{{ form.phone.value|default:'' }}" class="block w-full pl-10 pr-4 py-3 border border-gray-200 rounded-xl text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all" placeholder="+91 XXXXX XXXXX" required>
+                            </div>
+                            {% if form.phone.errors %}
+                                <p class="mt-2 text-xs font-bold text-red-600">{{ form.phone.errors.0 }}</p>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <div>
+                        <label for="company-select" class="block text-sm font-bold text-gray-700 mb-2">Company Name <span class="text-gray-400 font-medium text-xs">(Search & Select)</span></label>
+                        {{ form.company }}
+                        {% if form.company.errors %}
+                            <p class="mt-2 text-xs font-bold text-red-600">{{ form.company.errors.0 }}</p>
+                        {% endif %}
+                    </div>
+
+                    <div>
+                        <label for="{{ form.product_name.id_for_label }}" class="block text-sm font-bold text-gray-700 mb-2">Product/Service Name <span class="text-red-500">*</span></label>
+                        <div class="relative">
+                            <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                                <i class="fa-solid fa-box text-gray-400 text-sm"></i>
+                            </div>
+                            <input type="text" name="product_name" id="{{ form.product_name.id_for_label }}" value="{{ form.product_name.value|default:'' }}" class="block w-full pl-10 pr-4 py-3 border border-gray-200 rounded-xl text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all" placeholder="What are you interested in?" required>
+                        </div>
+                        {% if form.product_name.errors %}
+                            <p class="mt-2 text-xs font-bold text-red-600">{{ form.product_name.errors.0 }}</p>
+                        {% endif %}
+                    </div>
+
+                    <div>
+                        <label for="{{ form.product_description.id_for_label }}" class="block text-sm font-bold text-gray-700 mb-2">Message / Requirement</label>
+                        <textarea name="product_description" id="{{ form.product_description.id_for_label }}" rows="4" class="block w-full px-4 py-3 border border-gray-200 rounded-xl text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all" placeholder="How can we help you?">{{ form.product_description.value|default:'' }}</textarea>
+                    </div>
+
+                    <button type="submit" class="w-full bg-blue-800 hover:bg-blue-900 text-white font-bold py-4 px-6 rounded-2xl shadow-xl shadow-blue-500/20 transform transition-all active:scale-[0.98] hover:-translate-y-1 flex items-center justify-center gap-2">
+                        <span>Submit Inquiry</span>
+                        <i class="fa-solid fa-paper-plane text-sm"></i>
+                    </button>
+                    
+                    <p class="text-center text-xs text-gray-400 font-medium tracking-wide mt-6 uppercase">
+                        Secure Submission &bull; Quick Response &bull; 24/7 Support
+                    </p>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<!-- jQuery and Select2 JS -->
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+<script>
+    $(document).ready(function() {
+        $('#id_company').select2({
+            placeholder: "Search for a company...",
+            allowClear: true,
+            language: {
+                noResults: function() {
+                    return "No company found";
+                }
+            }
+        });
+    });
+</script>
+{% endblock %}

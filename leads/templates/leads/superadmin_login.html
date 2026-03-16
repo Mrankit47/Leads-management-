@@ -1,0 +1,98 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="UTF-8">
+<title>SuperAdmin Login</title>
+
+<script src="https://cdn.tailwindcss.com"></script>
+
+</head>
+
+<body class="bg-gray-100 min-h-screen flex items-center justify-center">
+
+<div class="w-full max-w-md">
+
+<!-- Logo / Title -->
+<div class="text-center mb-8">
+<h1 class="text-3xl font-bold text-gray-800">SuperAdmin Panel</h1>
+<p class="text-gray-500 mt-2">Login to manage companies</p>
+</div>
+
+<!-- Login Card -->
+<div class="bg-white shadow-lg rounded-xl p-8">
+    <!-- Back to Home Link -->
+    <div class="mb-4">
+        <a href="{% url 'home' %}" class="inline-flex items-center text-sm font-semibold text-blue-600 hover:text-blue-800 transition-colors">
+            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
+            Back to Home
+        </a>
+    </div>
+
+<form method="POST" action="{% url 'superadmin_login' %}">
+
+{% csrf_token %}
+
+{% if messages %}
+    {% for message in messages %}
+        <div class="mb-4 p-3 bg-red-100 text-red-700 rounded">
+            {{ message }}
+        </div>
+    {% endfor %}
+{% endif %}
+
+<div class="mb-5">
+<label class="block text-sm font-semibold text-gray-600 mb-1">
+Username
+</label>
+
+<input
+type="text"
+name="username"
+required
+class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+/>
+</div>
+
+<div class="mb-6">
+<label class="block text-sm font-semibold text-gray-600 mb-1">
+Password
+</label>
+
+<input
+type="password"
+name="password"
+required
+class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+/>
+</div>
+
+
+<button
+type="submit"
+class="w-full bg-[#1e40af] text-white py-2 rounded-lg hover:bg-[#1e3a8a] transition duration-200"
+>
+Login
+</button>
+
+</form>
+
+</div>
+
+<!-- Back to Employee Login -->
+<div class="text-center mt-4">
+
+<a
+href="{% url 'login' %}"
+class="text-[#1e40af] hover:underline text-sm"
+>
+Back to Employee Login
+</a>
+
+</div>
+
+</div>
+
+</body>
+</html>

@@ -1,0 +1,98 @@
+{% extends "leads/base.html" %}
+
+{% block title %}Edit User - {{ profile.user.username }} - LeadGen Tracker{% endblock %}
+
+{% block content %}
+
+<div class="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+    <!-- Navigation -->
+    <div class="max-w-3xl mx-auto mb-8">
+        <a href="{% if user.userprofile.role == 'admin' %}{% url 'company_admin_dashboard' %}{% elif user.userprofile.role == 'manager' %}{% url 'manager_dashboard' %}{% elif user.userprofile.role == 'editor' or user.userprofile.role == 'employee' or user.userprofile.role == 'hybrid' %}{% url 'employee_dashboard' %}{% else %}{% url 'dashboard' %}{% endif %}" 
+           class="inline-flex items-center text-sm font-semibold text-gray-500 hover:text-blue-600 transition-colors group">
+            <svg xmlns="http://www.w3.org/2000/svg" style="width: 1.25rem; height: 1.25rem;" class="mr-2 transition-transform group-hover:-translate-x-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+            </svg>
+            Back to Dashboard
+        </a>
+    </div>
+
+    <!-- Centered Card Container -->
+    <div class="max-w-3xl mx-auto bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden">
+        <div class="bg-gradient-to-r from-gray-900 to-gray-800 px-10 py-8 flex justify-between items-center">
+            <div>
+                <h2 class="text-3xl font-extrabold text-white tracking-tight">Update Staff Profile</h2>
+                <p class="mt-2 text-gray-400 font-medium">Modify information for <span class="text-blue-400">{{ profile.user.username }}</span></p>
+            </div>
+            <span class="px-4 py-1.5 bg-blue-900/50 text-blue-400 text-xs font-black rounded-full uppercase tracking-widest border border-blue-800">
+                {{ profile.role }}
+            </span>
+        </div>
+
+        <form method="POST" class="p-10 space-y-8">
+            {% csrf_token %}
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
+                <!-- Username -->
+                <div class="space-y-1.5">
+                    <label class="block text-sm font-bold text-gray-700 uppercase tracking-wider">Username</label>
+                    <input type="text" name="username" value="{{ user_obj.username }}" required
+                           class="w-full px-4 py-3 bg-gray-50 border-2 border-gray-100 rounded-xl focus:border-blue-500 focus:bg-white outline-none transition-all duration-200">
+                </div>
+
+                <!-- Email -->
+                <div class="space-y-1.5">
+                    <label class="block text-sm font-bold text-gray-700 uppercase tracking-wider">Email Address</label>
+                    <input type="email" name="email" value="{{ user_obj.email }}" required
+                           class="w-full px-4 py-3 bg-gray-50 border-2 border-gray-100 rounded-xl focus:border-blue-500 focus:bg-white outline-none transition-all duration-200">
+                </div>
+
+                <!-- Contact -->
+                <div class="md:col-span-2 space-y-1.5">
+                    <label class="block text-sm font-bold text-gray-700 uppercase tracking-wider">Contact Number</label>
+                    <input type="text" name="contact" value="{{ profile.contact }}" placeholder="Optional contact info"
+                           class="w-full px-4 py-3 bg-gray-50 border-2 border-gray-100 rounded-xl focus:border-blue-500 focus:bg-white outline-none transition-all duration-200">
+                </div>
+
+                {% if is_admin %}
+                <!-- Department (Admin Only) -->
+                <div class="space-y-1.5">
+                    <label class="block text-sm font-bold text-gray-700 uppercase tracking-wider">Department</label>
+                    <select name="department" class="w-full px-4 py-3 bg-gray-50 border-2 border-gray-100 rounded-xl focus:border-blue-500 focus:bg-white outline-none transition-all duration-200 cursor-pointer">
+                        <option value="sales" {% if profile.department == 'sales' %}selected{% endif %}>Sales</option>
+                        <option value="marketing" {% if profile.department == 'marketing' %}selected{% endif %}>Marketing</option>
+                        <option value="support" {% if profile.department == 'support' %}selected{% endif %}>Support</option>
+                        <option value="operations" {% if profile.department == 'operations' %}selected{% endif %}>Operations</option>
+                    </select>
+                </div>
+
+                <!-- Role (Admin Only) -->
+                <div class="space-y-1.5">
+                    <label class="block text-sm font-bold text-gray-700 uppercase tracking-wider">Assigned Role</label>
+                    <select name="role" class="w-full px-4 py-3 bg-gray-50 border-2 border-gray-100 rounded-xl focus:border-blue-500 focus:bg-white outline-none transition-all duration-200 cursor-pointer">
+                        <option value="admin" {% if profile.role == 'admin' %}selected{% endif %}>Admin</option>
+                        <option value="manager" {% if profile.role == 'manager' %}selected{% endif %}>Manager</option>
+                        <option value="editor" {% if profile.role == 'editor' %}selected{% endif %}>Editor</option>
+                        <option value="employee" {% if profile.role == 'employee' %}selected{% endif %}>Employee</option>
+                        <option value="hybrid" {% if profile.role == 'hybrid' %}selected{% endif %}>Hybrid</option>
+                    </select>
+                </div>
+                {% endif %}
+            </div>
+
+            <div class="pt-8 flex flex-col sm:flex-row gap-4">
+                <button type="submit" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 rounded-xl shadow-lg transition-all transform active:scale-[0.98] flex items-center justify-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                    </svg>
+                    Save Changes
+                </button>
+                <a href="{% if user.userprofile.role == 'admin' %}{% url 'company_admin_dashboard' %}{% elif user.userprofile.role == 'manager' %}{% url 'manager_dashboard' %}{% elif user.userprofile.role == 'editor' or user.userprofile.role == 'employee' or user.userprofile.role == 'hybrid' %}{% url 'employee_dashboard' %}{% else %}{% url 'dashboard' %}{% endif %}" 
+                   class="flex-1 bg-gray-50 hover:bg-gray-100 text-gray-600 font-bold py-4 rounded-xl text-center border-2 border-gray-100 transition-all">
+                    Cancel
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+
+{% endblock %}

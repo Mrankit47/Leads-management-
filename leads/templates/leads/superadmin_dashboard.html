@@ -1,0 +1,316 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SuperAdmin Dashboard | LeadGen Tracker</title>
+    
+    <!-- Theme Fonts and Icons -->
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        outfit: ['Outfit', 'sans-serif'],
+                    },
+                    colors: {
+                        slate: {
+                            850: '#151e2e',
+                            900: '#0f172a',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        body {
+            background: radial-gradient(circle at top right, #eff6ff 0%, #f8fafc 50%, #dbeafe 100%);
+            min-height: 100vh;
+        }
+
+        .glass-card {
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.5);
+            box-shadow: 0 10px 30px rgba(30, 64, 175, 0.05);
+        }
+
+        /* Sidebar Styling */
+        .sidebar {
+            background-color: #0f172a;
+            position: relative;
+            overflow: hidden;
+        }
+        .sidebar::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0; height: 100%;
+            background: linear-gradient(180deg, rgba(59,130,246,0.1) 0%, transparent 100%);
+            pointer-events: none;
+        }
+
+        .nav-item {
+            transition: all 0.3s ease;
+            position: relative;
+        }
+        
+        .nav-item.active {
+            background: linear-gradient(90deg, rgba(37,99,235,0.15) 0%, transparent 100%);
+            border-left: 3px solid #3b82f6;
+            color: #fff;
+        }
+        
+        .nav-item:hover:not(.active) {
+            background: rgba(255,255,255,0.05);
+            color: #60a5fa;
+            padding-left: 1.5rem;
+        }
+
+        /* Table Styling */
+        th {
+            font-family: 'Outfit', sans-serif;
+            letter-spacing: 0.05em;
+        }
+        
+        tbody tr {
+            transition: all 0.2s ease;
+        }
+        
+        tbody tr:hover {
+            background: #f8fafc;
+            transform: scale(1.001);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.02);
+        }
+    </style>
+</head>
+
+<body class="flex text-slate-800 font-sans">
+
+    <!-- Premium Sidebar -->
+    <div class="sidebar w-72 min-h-screen text-slate-300 flex flex-col justify-between shadow-2xl flex-shrink-0 z-20">
+        <div>
+            <!-- Branding / User Info -->
+            <div class="p-8 border-b border-white/5 mb-6 relative">
+                <div class="flex items-center gap-4 mb-6">
+                    <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center shadow-lg shadow-blue-500/20 text-white">
+                        <i class="fa-solid fa-crown text-xl"></i>
+                    </div>
+                    <div>
+                        <h2 class="font-outfit font-black text-white text-xl tracking-tight leading-none leading-tight py-1">LeadGen</h2>
+                        <p class="text-[10px] font-bold text-blue-400 uppercase tracking-[0.2em]">Enterprise</p>
+                    </div>
+                </div>
+
+                <div class="bg-slate-800/50 rounded-xl p-4 border border-white/5">
+                    <p class="text-xs text-slate-400 font-medium mb-1">Logged in as</p>
+                    <p class="text-sm font-bold text-white mb-2 truncate">{{ user.username }}</p>
+                    <div class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded bg-blue-500/10 border border-blue-500/20">
+                        <div class="w-1.5 h-1.5 rounded-full bg-blue-500 shadow-[0_0_5px_rgba(59,130,246,0.8)]"></div>
+                        <span class="text-[9px] font-bold text-blue-400 uppercase tracking-widest">SuperAdmin</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Navigation Links -->
+            <ul class="space-y-1 px-4">
+                <li>
+                    <a href="{% url 'superadmin_dashboard' %}" class="nav-item active flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-semibold">
+                        <i class="fa-solid fa-chart-pie w-5 text-center text-blue-500"></i>
+                        Companies Overview
+                    </a>
+                </li>
+                <li>
+                    <a href="{% url 'create_company' %}" class="nav-item flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium text-slate-400">
+                        <i class="fa-solid fa-building-circle-check w-5 text-center"></i>
+                        Create Company
+                    </a>
+                </li>
+            </ul>
+        </div>
+
+        <!-- Logout Section -->
+        <div class="p-6 mt-auto">
+            <form method="POST" action="{% url 'logout' %}">
+                {% csrf_token %}
+                <button type="submit" class="w-full bg-rose-500/10 hover:bg-rose-500 text-rose-500 hover:text-white border border-rose-500/20 font-bold py-3 px-4 rounded-xl transition-all duration-300 flex items-center justify-center gap-2 text-sm uppercase tracking-widest group">
+                    <i class="fa-solid fa-power-off group-hover:scale-110 transition-transform"></i>
+                    Terminate Session
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Main Content Area -->
+    <div class="flex-1 p-8 lg:p-12 overflow-y-auto w-full">
+
+        <!-- Page Header -->
+        <div class="flex items-end justify-between mb-10">
+            <div>
+                <h1 class="text-4xl font-outfit font-black text-slate-900 tracking-tight mb-2">Network Infrastructure</h1>
+                <p class="text-slate-500 font-medium text-sm">Monitor and manage all active corporate tenants.</p>
+            </div>
+            
+            <a href="{% url 'create_company' %}" class="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-xl font-bold text-sm shadow-lg shadow-blue-600/20 transition-all hover:-translate-y-0.5">
+                <i class="fa-solid fa-plus text-xs"></i>
+                Deploy New Company
+            </a>
+        </div>
+
+        <!-- Glassmorphism Table Container -->
+        <div class="glass-card rounded-2xl overflow-hidden border border-white">
+            <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse">
+                    <thead>
+                        <tr class="bg-blue-50/50 border-b border-blue-100/50">
+                            <th class="px-6 py-5 text-xs font-bold text-slate-600 uppercase tracking-widest pl-8">Corporate Entity</th>
+                            <th class="px-6 py-5 text-xs font-bold text-slate-600 uppercase tracking-widest">Reg. Type</th>
+                            <th class="px-6 py-5 text-xs font-bold text-slate-600 uppercase tracking-widest text-center">Selected Tier</th>
+                            <th class="px-6 py-5 text-xs font-bold text-slate-600 uppercase tracking-widest text-center">Database Status</th>
+                            <th class="px-6 py-5 text-xs font-bold text-slate-600 uppercase tracking-widest text-center">Activation</th>
+                            <th class="px-6 py-5 text-xs font-bold text-slate-600 uppercase tracking-widest text-center">Expiration</th>
+                            <th class="px-6 py-5 text-xs font-bold text-slate-600 uppercase tracking-widest text-center">Uptime Left</th>
+                            <th class="px-6 py-5 text-xs font-bold text-slate-600 uppercase tracking-widest text-right pr-8">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-100">
+                        {% for item in company_data %}
+                        <tr class="group">
+                            <!-- Company Name & Status -->
+                            <td class="px-6 py-5 whitespace-nowrap pl-8">
+                                <div class="flex items-center gap-3">
+                                    <div class="w-10 h-10 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center font-outfit font-bold text-lg border border-blue-100">
+                                        {{ item.company.name|slice:":1"|upper }}
+                                    </div>
+                                    <div>
+                                        <div class="text-sm font-black text-slate-900">{{ item.company.name }}</div>
+                                        <div class="text-[9px] font-bold uppercase tracking-[0.2em] mt-0.5 flex flex-wrap gap-2">
+                                            {% if item.company.is_active %}
+                                                <span class="text-emerald-500 relative flex items-center gap-1.5 border border-emerald-500 rounded px-1 flex-row flex-nowrap shrink-0">
+                                                    <span class="w-1 h-1 bg-emerald-500 rounded-full animate-pulse my-auto m-0 box-content flex flex-nowrap shrink-0"></span> Online
+                                                </span>
+                                            {% else %}
+                                                <span class="text-rose-500 flex items-center gap-1.5 border border-rose-500 rounded px-1 flex-row flex-nowrap shrink-0">
+                                                    <i class="fa-solid fa-ban text-[8px] my-auto m-0 box-content flex flex-nowrap shrink-0"></i> Suspended
+                                                </span>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                            </td>
+                            
+                            <!-- Registration Type -->
+                            <td class="px-6 py-5 whitespace-nowrap">
+                                <span class="inline-flex px-3 py-1 rounded bg-slate-100 text-slate-600 text-xs font-bold border border-slate-200">
+                                    {{ item.company.get_registration_type_display }}
+                                </span>
+                            </td>
+
+                            <!-- Plan Tier -->
+                            <td class="px-6 py-5 whitespace-nowrap text-center">
+                                {% if item.subscription and item.subscription.plan %}
+                                    <span class="inline-flex px-3 py-1 rounded-full bg-blue-100 max-w-min flex-wrap whitespace-normal shrink text-blue-700 text-[10px] font-black uppercase tracking-widest border border-blue-200 shadow-sm">
+                                        {{ item.subscription.plan.name }}
+                                    </span>
+                                {% else %}
+                                    <span class="text-xs text-slate-400 font-medium italic">No Plan</span>
+                                {% endif %}
+                            </td>
+
+                            <!-- Plan Status -->
+                            <td class="px-6 py-5 whitespace-nowrap text-center">
+                                {% if item.subscription %}
+                                    {% if item.subscription.is_active %}
+                                        <span class="inline-flex items-center gap-1.5 px-3 py-1 bg-emerald-50 text-emerald-700 text-[10px] font-black rounded-md uppercase tracking-widest border border-emerald-200">
+                                            <i class="fa-solid fa-check"></i> Active
+                                        </span>
+                                    {% else %}
+                                        <span class="inline-flex items-center gap-1.5 px-3 py-1 bg-rose-50 text-rose-700 text-[10px] font-black rounded-md uppercase tracking-widest border border-rose-200">
+                                            <i class="fa-solid fa-xmark"></i> Expired
+                                        </span>
+                                    {% endif %}
+                                {% else %}
+                                    <span class="inline-flex px-3 py-1 bg-slate-50 text-slate-500 text-[10px] font-black rounded-md uppercase tracking-widest border border-slate-200">None</span>
+                                {% endif %}
+                            </td>
+
+                            <!-- Start Date -->
+                            <td class="px-6 py-5 whitespace-nowrap text-center">
+                                <span class="text-xs font-medium text-slate-600">
+                                    {{ item.subscription.start_date|date:"d M, Y"|default:"-" }}
+                                </span>
+                            </td>
+
+                            <!-- End Date -->
+                            <td class="px-6 py-5 whitespace-nowrap text-center">
+                                <span class="text-xs font-medium text-slate-600">
+                                    {{ item.subscription.end_date|date:"d M, Y"|default:"-" }}
+                                </span>
+                            </td>
+
+                            <!-- Days Left -->
+                            <td class="px-6 py-5 whitespace-nowrap text-center">
+                                {% if item.subscription %}
+                                    <div class="flex items-center justify-center gap-1.5">
+                                        <span class="text-lg font-black {% if item.days_remaining < 7 %}text-rose-600{% elif item.days_remaining < 15 %}text-amber-500{% else %}text-slate-700{% endif %}">
+                                            {{ item.days_remaining }}
+                                        </span>
+                                        {% if item.days_remaining < 7 %}
+                                            <i class="fa-solid fa-triangle-exclamation text-rose-500 animate-pulse text-xs"></i>
+                                        {% endif %}
+                                    </div>
+                                    <div class="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Days</div>
+                                {% else %}
+                                    <span class="text-slate-300">-</span>
+                                {% endif %}
+                            </td>
+
+                            <!-- Actions -->
+                            <td class="px-6 py-5 whitespace-nowrap text-right pr-8">
+                                <div class="flex items-center justify-end gap-2">
+                                    <a href="{% url 'company_detail_view' item.company.id %}"
+                                       class="w-8 h-8 rounded-lg bg-white border border-slate-200 text-slate-500 flex items-center justify-center hover:bg-blue-50 hover:text-blue-600 hover:border-blue-200 transition-colors shadow-sm" title="View Details">
+                                        <i class="fa-solid fa-eye text-sm"></i>
+                                    </a>
+                                    
+                                    {% if item.company.is_active %}
+                                    <a href="{% url 'toggle_company_status' item.company.id %}"
+                                       class="w-8 h-8 rounded-lg bg-white border border-slate-200 text-amber-500 flex items-center justify-center hover:bg-amber-50 hover:text-amber-600 hover:border-amber-200 transition-colors shadow-sm" title="Suspend Company">
+                                        <i class="fa-solid fa-pause text-sm"></i>
+                                    </a>
+                                    {% else %}
+                                    <a href="{% url 'toggle_company_status' item.company.id %}"
+                                       class="w-8 h-8 rounded-lg bg-white border border-slate-200 text-emerald-500 flex items-center justify-center hover:bg-emerald-50 hover:text-emerald-600 hover:border-emerald-200 transition-colors shadow-sm" title="Reactivate Company">
+                                        <i class="fa-solid fa-play text-sm"></i>
+                                    </a>
+                                    {% endif %}
+                                </div>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="8" class="px-6 py-16 text-center">
+                                <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-slate-50 mb-4">
+                                    <i class="fa-solid fa-building-circle-xmark text-2xl text-slate-300"></i>
+                                </div>
+                                <h3 class="text-lg font-bold text-slate-900 mb-1">No infrastructure active</h3>
+                                <p class="text-sm text-slate-500 italic">Deploy a new company to begin monitoring.</p>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+    </div>
+
+</body>
+</html>

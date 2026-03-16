@@ -1,0 +1,466 @@
+{% extends 'leads/base.html' %} {% block title %}Manager Dashboard - LeadGen
+Tracker{% endblock %} {% block extra_css %}
+<style>
+  /* Sidebar */
+  .mgr-layout {
+    display: flex;
+    min-height: calc(100vh - 130px);
+  }
+
+  .mgr-sidebar {
+    width: 280px;
+    background: #0f172a; /* Deep Slate to match landing/other dashboards */
+    color: #fff;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    padding: 1.5rem 1rem;
+    position: fixed;
+    top: 64px;
+    left: 0;
+    height: calc(100vh - 64px);
+    overflow-y: auto;
+    z-index: 100;
+    box-shadow: 4px 0 15px rgba(0, 0, 0, 0.1);
+  }
+
+  /* Manager info block */
+  .mgr-profile {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    padding: 1rem;
+    text-align: center;
+    margin-bottom: 1.5rem;
+  }
+
+  .mgr-avatar {
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    background: linear-gradient(135deg, #1e40af, #3b82f6);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.3rem;
+    font-weight: 700;
+    margin: 0 auto 0.6rem;
+    box-shadow: 0 4px 12px rgba(30, 64, 175, 0.3);
+  }
+
+  .mgr-name {
+    font-weight: 700;
+    font-size: 0.95rem;
+    color: #f8fafc;
+    margin-bottom: 0.2rem;
+  }
+
+  .mgr-role-badge {
+    display: inline-block;
+    background: #1e40af;
+    color: #fff;
+    font-size: 0.7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    padding: 2px 12px;
+    border-radius: 20px;
+  }
+
+  /* Nav buttons */
+  .mgr-nav {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    flex: 1;
+  }
+
+  .mgr-nav-btn {
+    display: block;
+    width: 100%;
+    padding: 0.75rem 1rem;
+    border-radius: 10px;
+    border: none;
+    background: transparent;
+    color: #94a3b8;
+    font-size: 0.85rem;
+    font-weight: 600;
+    text-align: left;
+    text-decoration: none;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .mgr-nav-btn:hover {
+    background: rgba(255, 255, 255, 0.05);
+    color: #fff;
+  }
+
+  .mgr-logout-btn {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    border-radius: 10px;
+    border: none;
+    background: rgba(239, 68, 68, 0.1);
+    color: #f87171;
+    font-size: 0.85rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-align: left;
+    margin-top: 1rem;
+    border: 1px solid rgba(239, 68, 68, 0.2);
+  }
+
+  .mgr-logout-btn:hover {
+    background: #dc2626;
+    color: #fff;
+  }
+
+  /* Main content shift */
+  .mgr-main {
+    margin-left: 280px;
+    width: calc(100% - 280px);
+  }
+
+  /* ===== LIGHT BLUE / WHITE / BLACK THEME ===== */
+
+  /* Page background */
+  .mgr-main {
+    background: linear-gradient(135deg, #f8faff 0%, #eff6ff 100%);
+    min-height: 100vh;
+    padding: 0 0 2rem;
+  }
+
+  /* Container */
+  .manager-dashboard-container {
+    padding: 2rem;
+  }
+
+  /* Header */
+  .dashboard-header h1 {
+    color: #0f172a;
+    font-size: 2rem;
+    font-weight: 800;
+    letter-spacing: -0.025em;
+  }
+
+  .dashboard-header .text-muted {
+    color: #64748b;
+    font-weight: 500;
+  }
+
+  /* ---- Stat Cards - premium glassy look ---- */
+  .stats-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1.25rem;
+    margin-bottom: 2rem;
+  }
+
+  .stat-card {
+    flex: 1;
+    min-width: 150px;
+    background: #ffffff;
+    border-radius: 16px;
+    padding: 1.5rem;
+    text-align: center;
+    border: 1px solid rgba(226, 232, 240, 0.8);
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+    transition: transform 0.2s, box-shadow 0.2s;
+  }
+  
+  .stat-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.08);
+  }
+
+  /* Override individual card colours to match premium blue theme */
+  .stat-card:nth-child(1) { background: #ffffff; border-top: 4px solid #1e40af; } /* Total - Blue */
+  .stat-card:nth-child(2) { background: #ffffff; border-top: 4px solid #3b82f6; } /* Inquiry - Sky */
+  .stat-card:nth-child(3) { background: #ffffff; border-top: 4px solid #eab308; } /* Proposal - Yellow */
+  .stat-card:nth-child(4) { background: #ffffff; border-top: 4px solid #db2777; } /* Negotiation - Pink */
+  .stat-card:nth-child(5) { background: #ffffff; border-top: 4px solid #10b981; } /* Closer - Green */
+  .stat-card:nth-child(6) { background: #ffffff; border-top: 4px solid #8b5cf6; } /* Invoice - Purple */
+  .stat-card:nth-child(7) { background: #fff7ed; border-top: 4px solid #f97316; border-color: #ffedd5; } /* Unassigned - Orange */
+
+  .stat-value {
+    font-size: 2.25rem;
+    font-weight: 900;
+    color: #0f172a;
+    line-height: 1;
+  }
+
+  .stat-label {
+    font-size: 0.7rem;
+    font-weight: 800;
+    color: #94a3b8;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    margin-top: 0.75rem;
+  }
+
+  /* ---- Sales team section ---- */
+  .sales-team-section h2,
+  .recent-activities-section h2 {
+    color: #0f172a;
+    font-size: 1.25rem;
+    font-weight: 800;
+    margin-bottom: 1.5rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 2px solid #e2e8f0;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  
+  .sales-team-section h2::before {
+    content: '';
+    width: 4px;
+    height: 1.25rem;
+    background: #1e40af;
+    border-radius: 4px;
+  }
+
+  .sales-card {
+    background: #ffffff;
+    border: 1px solid #f1f5f9;
+    border-radius: 20px;
+    padding: 1.5rem;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+    transition: all 0.3s;
+  }
+  
+  .sales-card:hover {
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+  }
+
+  .sales-card h3 {
+    color: #1e293b;
+    font-size: 1.1rem;
+    font-weight: 800;
+    margin-bottom: 1rem;
+  }
+
+  .sales-stat-value {
+    color: #1e40af;
+    font-weight: 900;
+    font-size: 1.25rem;
+  }
+  .sales-stat-label {
+    color: #94a3b8;
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+  }
+  .status-label {
+    color: #64748b;
+    font-size: 0.8rem;
+    font-weight: 600;
+  }
+  .status-count {
+    color: #1e293b;
+    font-weight: 800;
+    font-size: 0.95rem;
+  }
+
+  /* ---- Activity items ---- */
+  .activity-item {
+    background: #ffffff;
+    border: 1px solid #f1f5f9;
+    border-left: 4px solid #1e40af;
+    border-radius: 12px;
+    padding: 1.25rem;
+    margin-bottom: 1rem;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
+    transition: transform 0.2s;
+  }
+  
+  .activity-item:hover {
+    transform: translateX(4px);
+  }
+
+  .activity-header strong {
+    color: #0f172a;
+    font-size: 0.95rem;
+    font-weight: 800;
+  }
+  .activity-time {
+    color: #94a3b8;
+    font-size: 0.75rem;
+    font-weight: 600;
+  }
+  .activity-lead {
+    color: #1e40af;
+    font-size: 0.85rem;
+    font-weight: 700;
+  }
+  .activity-user {
+    color: #64748b;
+    font-size: 0.85rem;
+    font-weight: 600;
+  }
+</style>
+{% endblock %} {% block content %}
+
+<div class="mgr-layout">
+  <!-- ===== SIDEBAR ===== -->
+  <aside class="mgr-sidebar">
+    <!-- Manager Profile -->
+    <div>
+      <div class="mgr-profile">
+        <div class="mgr-avatar">
+          {{ user.get_full_name|default:user.username|make_list|first|upper }}
+        </div>
+        <div class="mgr-name">
+          {{ user.get_full_name|default:user.username }}
+        </div>
+        <span class="mgr-role-badge">{{ role }}</span>
+      </div>
+
+      <nav class="mgr-nav">
+        <a href="{% url 'tickets_list' %}" class="mgr-nav-btn">
+          🎫 View Tickets
+        </a>
+        <a href="{% url 'create_user' %}" class="mgr-nav-btn">
+          👤 Create User
+        </a>
+        <a href="{% url 'create_ticket' %}" class="mgr-nav-btn">
+          ➕ Create Ticket
+        </a>
+        <form method="post" action="{% url 'manager_fetch_emails' %}">
+          {% csrf_token %}
+          <button type="submit" class="mgr-nav-btn" style="width: 100%">
+            📧 Fetch Emails
+          </button>
+        </form>
+        <a href="{% url 'mdashboard' %}" class="mgr-nav-btn">
+          📊 Sales Dashboard
+        </a>
+        <a href="{% url 'employee_profile' %}" class="mgr-nav-btn">
+          👤 Personal Profile
+        </a>
+      </nav>
+    </div>
+
+    <!-- Logout -->
+    <form method="post" action="{% url 'logout' %}">
+      {% csrf_token %}
+      <button type="submit" class="mgr-logout-btn">🚪 Logout</button>
+    </form>
+  </aside>
+
+  <!-- ===== MAIN CONTENT ===== -->
+  <div class="mgr-main">
+    <div class="manager-dashboard-container">
+      <div class="container">
+        <!-- HEADER -->
+        <div class="dashboard-header">
+          <div>
+            <h1>User Management</h1>
+            <p class="text-muted">
+              Manage your company employees and their roles for <strong>{{ company.name }}</strong>
+            </p>
+          </div>
+        </div>
+
+        <!-- USER MANAGEMENT TABLE -->
+        <div class="sales-team-section">
+          <h2>Company Employees</h2>
+
+          <div class="sales-card" style="padding: 0; overflow: hidden; border-radius: 16px;">
+            <div style="overflow-x: auto;">
+              <table style="width: 100%; border-collapse: collapse; text-align: left;">
+                <thead>
+                  <tr style="background: #f8fafc; border-bottom: 2px solid #e2e8f0;">
+                    <th style="padding: 1.25rem 1.5rem; color: #64748b; font-weight: 700; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em;">Employee</th>
+                    <th style="padding: 1.25rem 1.5rem; color: #64748b; font-weight: 700; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em;">Contact</th>
+                    <th style="padding: 1.25rem 1.5rem; color: #64748b; font-weight: 700; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em;">Department</th>
+                    <th style="padding: 1.25rem 1.5rem; color: #64748b; font-weight: 700; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em;">Role</th>
+                    <th style="padding: 1.25rem 1.5rem; color: #64748b; font-weight: 700; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; text-align: right;">Action</th>
+                  </tr>
+                </thead>
+                <tbody style="color: #1e293b;">
+                  {% for uprofile in users_list %}
+                  <tr style="border-bottom: 1px solid #f1f5f9; transition: background 0.2s;" onmouseover="this.style.background='#fcfdfe'" onmouseout="this.style.background='transparent'">
+                    <td style="padding: 1.25rem 1.5rem;">
+                      <div style="display: flex; align-items: center; gap: 1rem;">
+                        <div style="width: 40px; height: 40px; border-radius: 10px; background: #eff6ff; color: #1e40af; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 0.9rem; border: 1px solid #dbeafe;">
+                          {{ uprofile.user.username|make_list|first|upper }}
+                        </div>
+                        <div>
+                          <div style="font-weight: 800; font-size: 0.95rem; color: #0f172a;">{{ uprofile.user.get_full_name|default:uprofile.user.username }}</div>
+                          <div style="font-size: 0.8rem; color: #64748b;">{{ uprofile.user.email }}</div>
+                        </div>
+                      </div>
+                    </td>
+                    <td style="padding: 1.25rem 1.5rem; font-size: 0.9rem; font-weight: 600; color: #334155;">
+                      {{ uprofile.contact|default:"-" }}
+                    </td>
+                    <td style="padding: 1.25rem 1.5rem;">
+                      <span style="display: inline-block; padding: 4px 12px; border-radius: 6px; background: #f1f5f9; color: #475569; font-size: 0.75rem; font-weight: 700; text-transform: capitalize;">
+                        {{ uprofile.get_department_display|default:"Unassigned" }}
+                      </span>
+                    </td>
+                    <td style="padding: 1.25rem 1.5rem;">
+                      <select onchange="updateRole('{{ uprofile.user.id }}', this.value)" style="padding: 0.5rem 2rem 0.5rem 0.75rem; border-radius: 8px; border: 1px solid #e2e8f0; font-size: 0.85rem; font-weight: 600; color: #1e293b; background: #fff url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%2364748B%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E') no-repeat right 0.75rem center; background-size: 0.65rem auto; appearance: none; cursor: pointer;">
+                        {% for r_val, r_name in manageable_roles %}
+                        <option value="{{ r_val }}" {% if uprofile.role == r_val %}selected{% endif %}>{{ r_name }}</option>
+                        {% endfor %}
+                      </select>
+                    </td>
+                    <td style="padding: 1.25rem 1.5rem; text-align: right;">
+                      <a href="{% url 'edit_user' uprofile.user.id %}" style="color: #1e40af; font-size: 1.1rem; padding: 8px; border-radius: 8px; background: #eff6ff; border: 1px solid #dbeafe; transition: all 0.2s;" title="Full Edit">
+                        <i class="fas fa-edit"></i>
+                      </a>
+                    </td>
+                  </tr>
+                  {% empty %}
+                  <tr>
+                    <td colspan="5" style="padding: 3rem; text-align: center; color: #94a3b8; font-weight: 600;">
+                      No employees found for this company.
+                    </td>
+                  </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+async function updateRole(userId, newRole) {
+    try {
+        const response = await fetch("{% url 'update_user_role' %}", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "X-CSRFToken": "{{ csrf_token }}"
+            },
+            body: JSON.stringify({
+                user_id: userId,
+                role: newRole
+            })
+        });
+        
+        const data = await response.json();
+        if (data.ok) {
+            // Optional: Toast notification could be added here
+            // For now, simple visual feedback is enough from the select being sticky
+        } else {
+            alert("Error: " + data.error);
+            location.reload(); // Revert on failure
+        }
+    } catch (err) {
+        console.error(err);
+        alert("Failed to update role. Please try again.");
+        location.reload();
+    }
+}
+</script>
+
+{% endblock %}
