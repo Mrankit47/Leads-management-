@@ -41,7 +41,12 @@
                     {% if user|is_manager %}
                         <a href="{% url 'manager_dashboard' %}">Manager View</a>
                     {% endif %}
-                     <span class="user-info">Welcome, {{ user.get_full_name|default:user.username }}</span>
+                     <span class="user-info">
+                        Welcome, {{ user.get_full_name|default:user.username }}
+                        {% if user.userprofile.company %}
+                            | <span class="font-bold text-blue-600">{{ user.userprofile.company.name }}</span>
+                        {% endif %}
+                     </span>
                    <form method="post" action="{% url 'logout' %}" style="display:inline;">
                         {% csrf_token %}
                         <button type="submit" class="bg-red-600 hover:bg-red-700 text-white px-3 py-1.5 rounded-md text-sm font-bold shadow-sm transition transform active:scale-95 flex items-center gap-1.5">

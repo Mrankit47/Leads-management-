@@ -2,7 +2,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Ticket Detail - #{{ ticket.id }}</title>
+    <title>Ticket Detail - #{{ ticket.id }} | {{ user.userprofile.company.name }} | LeadGen Tracker</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
@@ -34,7 +34,7 @@
             <span class="px-2.5 py-0.5 rounded-md text-xs font-bold bg-blue-100 text-blue-800">#{{ ticket.id }}</span>
             <span class="text-sm text-gray-500">{{ ticket.created_at|date:"M d, Y" }}</span>
         </div>
-        <h1 class="text-3xl font-bold text-gray-900">{{ ticket.subject }}</h1>
+        <h1 class="text-3xl font-bold text-gray-900">{{ ticket.subject }} | {{ user.userprofile.company.name }}</h1>
         <p class="text-gray-500 mt-2">Opened by <span class="font-medium text-gray-700">{{ ticket.customer_name }}</span> ({{ ticket.customer_email }})</p>
     </div>
 

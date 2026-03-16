@@ -1,6 +1,6 @@
 {% extends "leads/base.html" %}
 
-{% block title %}Tickets - LeadGen Tracker{% endblock %}
+{% block title %}Tickets | {{ company.name }} | LeadGen Tracker{% endblock %}
 
 {% block content %}
 
@@ -20,7 +20,7 @@
         <!-- Header Section -->
         <div class="mb-8 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
             <div>
-                <h1 class="text-3xl font-extrabold text-gray-900 tracking-tight">Support Tickets</h1>
+                <h1 class="text-3xl font-extrabold text-gray-900 tracking-tight">Support Tickets | {{ company.name }}</h1>
                 <p class="mt-2 text-sm text-gray-500">Track and manage service requests.</p>
             </div>
             

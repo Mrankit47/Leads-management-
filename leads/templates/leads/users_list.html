@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>User Management | LeadGen Tracker</title>
+    <title>User Management | {{ company.name }} | LeadGen Tracker</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet" />
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -34,7 +34,7 @@
         <div class="mb-10 flex flex-col md:flex-row md:items-center md:justify-between gap-6">
             <div>
                 <h1 class="text-4xl font-black text-blue-900 tracking-tight flex items-center gap-4">
-                    <i class="fa-solid fa-users-gear text-blue-600"></i> User Management
+                    <i class="fa-solid fa-users-gear text-blue-600"></i> User Management | {{ company.name }}
                 </h1>
                 <p class="mt-2 text-blue-700 font-semibold opacity-70">Monitor and manage access controls for your organization's staff members.</p>
             </div>

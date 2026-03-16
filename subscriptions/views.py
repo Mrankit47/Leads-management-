@@ -83,12 +83,14 @@ def register_company(request):
             registration_type='self_registered'
         )
         
-        # Create profile
-        UserProfile.objects.create(
+        # Update profile (already created by post_save signal)
+        UserProfile.objects.update_or_create(
             user=user,
-            company=company,
-            role='admin',
-            contact=phone
+            defaults={
+                'company': company,
+                'role': 'admin',
+                'contact': phone
+            }
         )
         
         from django.contrib.auth import login

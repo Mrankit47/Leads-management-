@@ -1,6 +1,6 @@
 {% extends 'leads/base.html' %}
 
-{% block title %}Dashboard | LeadGen Tracker{% endblock %}
+{% block title %}Dashboard | {{ company.name|default:"LeadGen" }} | LeadGen Tracker{% endblock %}
 
 {% block extra_css %}
 <style>
@@ -58,7 +58,7 @@
 
         <div class="flex items-center gap-4 bg-white/40 backdrop-blur-md px-4 py-2 rounded-2xl border border-white/60">
             <div class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>
-            <span class="text-xs font-black text-blue-900 uppercase tracking-widest">Live System Feed</span>
+            <span class="text-xs font-black text-blue-900 uppercase tracking-widest">{{ company.name|default:"Live System Feed" }}</span>
         </div>
     </div>
 

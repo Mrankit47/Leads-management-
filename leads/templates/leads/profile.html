@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>My Profile - {{ company.name }}</title>
+    <title>My Profile - {{ company.name|default:"LeadGen" }}</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
@@ -25,20 +25,14 @@
             <!-- Header/Logo Area -->
             <div class="mb-10 text-center">
                 <div class="w-16 h-16 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-2xl mx-auto flex items-center justify-center text-2xl font-black shadow-lg mb-4">
-                    {{ company.name|make_list|first|upper }}
+                    {% if company %}{{ company.name|make_list|first|upper }}{% else %}LG{% endif %}
                 </div>
-                <h2 class="text-xl font-extrabold tracking-tight">{{ company.name }}</h2>
+                <h2 class="text-xl font-extrabold tracking-tight">{{ company.name|default:"LeadGen Tracker" }}</h2>
                 <div class="inline-block px-3 py-1 rounded-full bg-blue-500/20 text-blue-400 text-[10px] font-bold uppercase tracking-wider mt-2 border border-blue-500/30">
-                    {{ profile.role|capitalize }} Panel
+                    {{ profile.role|default:"User"|capfirst }} Panel
                 </div>
             </div>
 
-            <!-- Profile Shortcut Icon (Active State) -->
-            <div class="mb-8 flex justify-center">
-                <div class="w-12 h-12 rounded-xl bg-gradient-to-tr from-blue-600 to-blue-800 flex items-center justify-center text-lg font-bold shadow-md ring-4 ring-blue-500/30">
-                    {{ user.username|make_list|first|upper }}
-                </div>
-            </div>
 
 
             <!-- Navigation -->
@@ -98,7 +92,7 @@
             <div class="bg-white rounded-3xl shadow-2xl border border-slate-100 overflow-hidden">
                 <div class="p-8 border-b border-slate-100 bg-slate-50/50 flex items-center gap-4">
                     <div class="w-16 h-16 rounded-2xl bg-blue-100 flex items-center justify-center text-blue-700 text-2xl font-black">
-                        {{ user.username|make_list|first|upper }}
+                        <i class="fas fa-user"></i>
                     </div>
                     <div>
                         <h2 class="text-xl font-black text-slate-900">Account Details</h2>
@@ -112,15 +106,27 @@
                         <!-- First Name -->
                         <div class="space-y-2">
                             <label class="block text-xs font-black text-slate-400 uppercase tracking-widest pl-1">First Name</label>
-                            <input type="text" name="first_name" value="{{ user.first_name }}" required
-                                class="w-full px-5 py-4 bg-slate-50 rounded-2xl input-premium font-semibold text-slate-900" placeholder="Enter first name">
+                            <input type="text" name="first_name" id="first_name" value="{{ first_name }}" required
+                                class="w-full px-5 py-4 bg-slate-50 rounded-2xl input-premium font-semibold text-slate-900" placeholder="Enter first name" autocomplete="given-name">
                         </div>
                         
-                        <!-- Last Name -->
-                        <div class="space-y-2">
+                        <!-- Company (Read Only) -->
+                {% if user.userprofile.company %}
+                <div class="space-y-1.5">
+                    <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Company</label>
+                    <div class="relative">
+                        <i class="fa-solid fa-building absolute left-4 top-1/2 -translate-y-1/2 text-gray-300 text-xs"></i>
+                        <input type="text" value="{{ user.userprofile.company.name }}" readonly
+                               class="w-full pl-10 pr-4 py-3.5 bg-gray-50 border border-gray-100 rounded-2xl font-bold text-gray-700 outline-none">
+                    </div>
+                </div>
+                {% endif %}
+
+                <!-- Username -->
+                <div class="space-y-2">
                             <label class="block text-xs font-black text-slate-400 uppercase tracking-widest pl-1">Last Name</label>
-                            <input type="text" name="last_name" value="{{ user.last_name }}" required
-                                class="w-full px-5 py-4 bg-slate-50 rounded-2xl input-premium font-semibold text-slate-900" placeholder="Enter last name">
+                            <input type="text" name="last_name" id="last_name" value="{{ last_name }}" required
+                                class="w-full px-5 py-4 bg-slate-50 rounded-2xl input-premium font-semibold text-slate-900" placeholder="Enter last name" autocomplete="family-name">
                         </div>
 
                         <!-- Email -->
@@ -135,6 +141,13 @@
                             <label class="block text-xs font-black text-slate-400 uppercase tracking-widest pl-1">Contact Number</label>
                             <input type="text" name="contact" value="{{ profile.contact }}"
                                 class="w-full px-5 py-4 bg-slate-50 rounded-2xl input-premium font-semibold text-slate-900" placeholder="Enter phone number">
+                        </div>
+
+                        <!-- Company Name -->
+                        <div class="space-y-2">
+                            <label class="block text-xs font-black text-slate-400 uppercase tracking-widest pl-1">Company</label>
+                            <input type="text" value="{{ company.name|default:"Not assigned" }}" readonly
+                                class="w-full px-5 py-4 bg-slate-100 rounded-2xl input-premium font-semibold text-slate-500 cursor-not-allowed" title="Company cannot be changed here">
                         </div>
                     </div>
 

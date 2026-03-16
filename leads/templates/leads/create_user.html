@@ -46,6 +46,26 @@
             {% csrf_token %}
 
             <div class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
+                <!-- First Name -->
+                <div class="space-y-1.5">
+                    <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">First Name</label>
+                    <div class="relative">
+                        <i class="fa-solid fa-signature absolute left-4 top-1/2 -translate-y-1/2 text-gray-300 text-xs"></i>
+                        <input type="text" name="first_name" placeholder="Enter first name" required
+                               class="w-full pl-10 pr-4 py-3.5 bg-white border border-gray-200 rounded-2xl focus:border-blue-600 focus:ring-4 focus:ring-blue-100 outline-none transition-all duration-200 font-medium">
+                    </div>
+                </div>
+
+                <!-- Last Name -->
+                <div class="space-y-1.5">
+                    <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Last Name</label>
+                    <div class="relative">
+                        <i class="fa-solid fa-signature absolute left-4 top-1/2 -translate-y-1/2 text-gray-300 text-xs"></i>
+                        <input type="text" name="last_name" placeholder="Enter last name" required
+                               class="w-full pl-10 pr-4 py-3.5 bg-white border border-gray-200 rounded-2xl focus:border-blue-600 focus:ring-4 focus:ring-blue-100 outline-none transition-all duration-200 font-medium">
+                    </div>
+                </div>
+
                 <!-- Username -->
                 <div class="space-y-1.5">
                     <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Username</label>

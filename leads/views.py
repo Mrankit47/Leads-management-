@@ -397,7 +397,8 @@ def dashboard(request):
             "assigned_filter": assigned_filter,
             "stats": stats,
             "ticket_stats": ticket_stats,
-            "is_manager": is_manager(request.user)
+            "is_manager": is_manager(request.user),
+            "company": company
         },
     )
 
@@ -704,7 +705,7 @@ def company_admin_dashboard(request):
             "tickets_count": tickets_count,
             "users": users,
             "role": "Company Admin",
-            "full_name": f"{request.user.first_name} {request.user.last_name}" or request.user.username,
+            "full_name": f"{request.user.first_name} {request.user.last_name}".strip() or request.user.username,
             "subscription": subscription,
             "days_remaining": days_remaining,
         },
@@ -723,6 +724,8 @@ def create_user(request):
 
     if request.method == "POST":
 
+        first_name = request.POST.get("first_name")
+        last_name = request.POST.get("last_name")
         username = request.POST.get("username")
         email = request.POST.get("email")
         
@@ -757,22 +760,27 @@ def create_user(request):
         user = User.objects.create_user(
             username=username,
             email=email,
-            password=password
+            password=password,
+            first_name=first_name,
+            last_name=last_name
         )
 
-        UserProfile.objects.create(
+        # Update profile (already created by post_save signal)
+        UserProfile.objects.update_or_create(
             user=user,
-            company=company,
-            role=role,
-            contact=contact,
-            department=department
+            defaults={
+                'company': company,
+                'role': role,
+                'contact': contact,
+                'department': department
+            }
         )
 
         messages.success(request, "User created successfully")
 
         return redirect("users_list")
 
-    return render(request, "leads/create_user.html")
+    return render(request, "leads/create_user.html", {"company": company})
 
 @login_required
 def users_list(request):
@@ -795,7 +803,8 @@ def users_list(request):
         "leads/users_list.html",
         {
             "users": users,
-            "role": profile.role.capitalize()
+            "role": profile.role.capitalize(),
+            "company": company
         }
     )
 
@@ -837,6 +846,8 @@ def edit_user(request, user_id):
 
     if request.method == "POST":
         # Both Admin and Editor can update these
+        target_user.first_name = request.POST.get("first_name")
+        target_user.last_name = request.POST.get("last_name")
         target_user.username = request.POST.get("username")
         target_user.email = request.POST.get("email")
         target_profile.contact = request.POST.get("contact")
@@ -858,7 +869,8 @@ def edit_user(request, user_id):
         {
             "user_obj": target_user,
             "profile": target_profile,
-            "is_admin": profile.role == "admin"
+            "is_admin": profile.role == "admin",
+            "company": profile.company
         }
     )
 
@@ -913,7 +925,7 @@ def create_ticket(request):
     return render(
         request,
         "leads/create_ticket.html",
-        {"users": users}
+        {"users": users, "company": company}
     )
 
 
@@ -931,7 +943,7 @@ def tickets_list(request):
     return render(
         request,
         "leads/tickets_list.html",
-        {"tickets": tickets}
+        {"tickets": tickets, "company": company}
     )
 
 
@@ -955,7 +967,8 @@ def ticket_detail(request, id):
         "leads/ticket_detail.html",
         {
             "ticket": ticket,
-            "activities": activities
+            "activities": activities,
+            "company": company
         }
     )
 
@@ -1153,7 +1166,7 @@ def employee_dashboard(request):
         "company": company,
         "tickets": tickets,
         "role": role,
-        "full_name": f"{request.user.first_name} {request.user.last_name}" or request.user.username,
+        "full_name": f"{request.user.first_name} {request.user.last_name}".strip() or request.user.username,
         "user": request.user
     }
 
@@ -1165,7 +1178,7 @@ def employee_dashboard(request):
 
 @login_required
 def employee_profile(request):
-    profile = request.user.userprofile
+    profile, created = UserProfile.objects.get_or_create(user=request.user)
     if request.method == "POST":
         request.user.first_name = request.POST.get("first_name")
         request.user.last_name = request.POST.get("last_name")
@@ -1180,8 +1193,10 @@ def employee_profile(request):
         
     return render(request, "leads/profile.html", {
         "user": request.user,
+        "first_name": request.user.first_name,
+        "last_name": request.user.last_name,
         "profile": profile,
-        "company": profile.company,
+        "company": profile.company if profile.company else None,
         "full_name": f"{request.user.first_name} {request.user.last_name}".strip() or request.user.username
     })
 
