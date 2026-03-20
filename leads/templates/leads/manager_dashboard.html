@@ -137,13 +137,37 @@
     padding-left: calc(1rem - 3px);
   }
 
+  .mgr-primary-btn {
+    width: 100%;
+    padding: 0.8rem 1rem;
+    border-radius: 12px;
+    background: linear-gradient(135deg, #1e40af, #3b82f6);
+    color: #fff;
+    font-size: 0.875rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.25s ease;
+    text-align: left;
+    font-family: 'Inter', sans-serif;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    border: none;
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+  }
+
+  .mgr-primary-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(59, 130, 246, 0.4);
+  }
+
   .mgr-logout-btn {
     width: 100%;
     padding: 0.8rem 1rem;
     border-radius: 12px;
-    border: 1px solid rgba(239, 68, 68, 0.15);
-    background: rgba(239, 68, 68, 0.05);
-    color: #ef4444;
+    border: none;
+    background: #dc2626;
+    color: #fff;
     font-size: 0.875rem;
     font-weight: 700;
     cursor: pointer;
@@ -154,13 +178,13 @@
     display: flex;
     align-items: center;
     gap: 0.75rem;
+    box-shadow: 0 4px 12px rgba(220, 38, 38, 0.2);
   }
 
   .mgr-logout-btn:hover {
-    background: rgba(239, 68, 68, 0.85);
-    color: #fff;
-    border-color: transparent;
-    transform: translateX(2px);
+    background: #b91c1c;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(220, 38, 38, 0.3);
   }
 
   /* ===== MAIN CONTENT ===== */
@@ -426,7 +450,7 @@
         </a>
         <form method="post" action="{% url 'manager_fetch_emails' %}">
           {% csrf_token %}
-          <button type="submit" class="mgr-nav-btn" style="width:100%">
+          <button type="submit" class="mgr-primary-btn" style="width:100%">
             <i class="fas fa-envelope-open-text"></i> Fetch Emails
           </button>
         </form>

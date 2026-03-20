@@ -16,8 +16,28 @@ from django.contrib.auth.models import User
 from django.contrib.auth import authenticate, login, logout
 from subscriptions.services import check_lead_limit, check_user_limit
 from subscriptions.services import check_user_limit
-from leads.models import Lead, LeadActivity, Ticket, Company, UserProfile, TicketActivity
+from leads.models import Lead, LeadActivity, Ticket, Company, UserProfile, TicketActivity, Department
 from leads.forms import InquiryForm, LeadUpdateForm
+
+
+def get_dashboard_url(user):
+    """Returns the named URL for the user's primary dashboard based on their role."""
+    profile = getattr(user, 'userprofile', None)
+    role = getattr(profile, 'role', None) if profile else None
+
+    if user.is_superuser:
+        return 'superadmin_dashboard'
+    if role == 'admin':
+        return 'company_admin_dashboard'
+    if role == 'manager':
+        return 'manager_dashboard'
+    if role == 'editor':
+        return 'editor_dashboard'
+    if role == 'hybrid':
+        return 'hybrid_dashboard'
+    if role == 'employee':
+        return 'employee_dashboard'
+    return 'home'
 
 
 # ---------------- RBAC HELPERS ---------------- #
@@ -412,6 +432,10 @@ def dashboard(request):
     page_number = request.GET.get("page")
     page_obj = paginator.get_page(page_number)
 
+    # Set Dashboard Context for Managers
+    if profile and profile.role == "manager":
+        request.session['dashboard_context'] = 'secondary'
+
     return render(
         request,
         "leads/dashboard.html",
@@ -423,7 +447,8 @@ def dashboard(request):
             "stats": stats,
             "ticket_stats": ticket_stats,
             "is_manager": is_manager(request.user),
-            "company": company
+            "company": company,
+            "dashboard_url": get_dashboard_url(request.user)
         },
     )
 
@@ -553,7 +578,6 @@ def manager_dashboard(request):
     # Available roles for managers to assign
     manageable_roles = [
         ("editor", "Editor"),
-        ("hybrid", "Hybrid"),
         ("employee", "Employee"),
     ]
 
@@ -563,6 +587,9 @@ def manager_dashboard(request):
         "users_list": users,
         "manageable_roles": manageable_roles,
     }
+
+    # Set Dashboard Context for Managers
+    request.session['dashboard_context'] = 'main'
 
     return render(
         request, 
@@ -779,10 +806,19 @@ def create_user(request):
             messages.error(request, "Passwords do not match")
             return redirect("create_user")
 
+        # Role validation
+        # Admin can assign any role except admin/hybrid (as per requirement)
+        # However, the user said "Remove 'admin' and 'hybrid' from the role dropdown for Company Admin"
+        # We should still allow superadmin to assign them if they were using this form (though they use django admin usually)
+        if getattr(profile, 'role', None) == "admin":
+            if role in ["admin", "hybrid", "superadmin"]:
+                messages.error(request, f"Cannot assign {role} role.")
+                return redirect("create_user")
+        
         # manager role restriction
         if getattr(profile, 'role', None) == "manager":
-            if role not in ["editor", "employee", "hybrid"]:
-                messages.error(request, "Manager can only assign editor, employee or hybrid role")
+            if role not in ["editor", "employee"]: # Removed hybrid
+                messages.error(request, "Manager can only assign editor or employee role")
                 return redirect("create_user")
 
         # username validation
@@ -798,6 +834,14 @@ def create_user(request):
             last_name=last_name
         )
 
+        # Fetch Department object
+        dept_obj = None
+        if department:
+            try:
+                dept_obj = Department.objects.get(id=department, company=company)
+            except (Department.DoesNotExist, ValueError):
+                pass
+
         # Update profile (already created by post_save signal)
         UserProfile.objects.update_or_create(
             user=user,
@@ -805,7 +849,7 @@ def create_user(request):
                 'company': company,
                 'role': role,
                 'contact': contact,
-                'department': department
+                'department': dept_obj
             }
         )
 
@@ -813,7 +857,22 @@ def create_user(request):
 
         return redirect("users_list")
 
-    return render(request, "leads/create_user.html", {"company": company})
+    # Role filtering for dropdown
+    all_roles = UserProfile.ROLE_CHOICES
+    if getattr(profile, 'role', None) == "admin":
+        assignable_roles = [r for r in all_roles if r[0] not in ["admin", "hybrid", "superadmin"]]
+    elif getattr(profile, 'role', None) == "manager":
+        assignable_roles = [r for r in all_roles if r[0] in ["editor", "employee"]]
+    else:
+        assignable_roles = []
+
+    available_departments = Department.objects.filter(company=company)
+
+    return render(request, "leads/create_user.html", {
+        "company": company,
+        "assignable_roles": assignable_roles,
+        "available_departments": available_departments
+    })
 
 @login_required
 def users_list(request):
@@ -827,13 +886,17 @@ def users_list(request):
 
     users = UserProfile.objects.filter(company=company)
 
-    # Manager restrictions (already existed, keeping for safety)
-    if getattr(profile, 'role', None) == "manager":
+    # Role-based visibility logic
+    role = getattr(profile, 'role', None)
+    if role == "editor":
+        # Editors see everyone in their company EXCEPT Admins
         users = users.exclude(role="admin")
-
-    # Editor/Employee/Hybrid restrictions
-    if getattr(profile, 'role', None) in ["editor", "employee", "hybrid"]:
+    elif role in ["employee", "hybrid"]:
+        # Standard employees/hybrids see only other employees/editors/hybrids
         users = users.exclude(role__in=["admin", "manager"])
+    elif role == "manager":
+        # Managers see everyone EXCEPT Admins
+        users = users.exclude(role="admin")
 
     return render(
         request,
@@ -910,21 +973,40 @@ def edit_user(request, user_id):
         # Only Admin can update role and department (as per requirements for Editor)
         if getattr(profile, 'role', None) == "admin":
             if target_profile:
-                target_profile.department = request.POST.get("department")
-                target_profile.role = request.POST.get("role")
+                # Fetch Department object
+                new_dept_id = request.POST.get("department")
+                new_role = request.POST.get("role")
+                
+                if new_dept_id:
+                    try:
+                        target_profile.department = Department.objects.get(id=new_dept_id, company=company)
+                    except (Department.DoesNotExist, ValueError):
+                        pass
+                
+                # Role validation (prevent assigning admin/hybrid)
+                if new_role not in ["admin", "hybrid", "superadmin"]:
+                    target_profile.role = new_role
+                
                 target_profile.save()
         
         messages.success(request, "User updated successfully.")
         return redirect("users_list")
  
+    # Role filtering for dropdown
+    all_roles = UserProfile.ROLE_CHOICES
+    assignable_roles = [r for r in all_roles if r[0] not in ["admin", "hybrid", "superadmin"]]
+    available_departments = Department.objects.filter(company=company)
+
     return render(
         request,
         "leads/edit_user.html",
         {
             "user_obj": target_user,
             "profile": target_profile,
+            "company": company,
             "is_admin": getattr(profile, 'role', None) == "admin",
-            "company": company
+            "assignable_roles": assignable_roles,
+            "available_departments": available_departments
         }
     )
 
@@ -942,7 +1024,7 @@ def create_ticket(request):
 
     users = User.objects.filter(
         userprofile__company=company
-    )
+    ).exclude(userprofile__role='admin')
 
     if request.method == "POST":
 
@@ -980,10 +1062,91 @@ def create_ticket(request):
 
         return redirect("tickets_list")
 
+    # Determine Dashboard URL for Back Link
+    dashboard_url = get_dashboard_url(request.user)
+
     return render(
         request,
         "leads/create_ticket.html",
-        {"users": users, "company": company}
+        {"users": users, "company": company, "dashboard_url": dashboard_url}
+    )
+
+
+@login_required
+def edit_ticket(request, id):
+    """Handles updating an existing support ticket."""
+    profile = getattr(request.user, 'userprofile', None)
+    company = getattr(profile, 'company', None) if profile else None
+ 
+    if not profile or not company:
+        messages.error(request, "User profile or company not found.")
+        return redirect("login")
+
+    ticket = get_object_or_404(Ticket, id=id, company=company)
+    
+    # Ownership Check: Only assignee or admin can edit
+    if ticket.assigned_to != request.user and profile.role != 'admin':
+        messages.error(request, "Permission denied. You can only edit tickets assigned to you.")
+        return redirect("ticket_detail", id=ticket.id)
+
+    # Assignment filtering: exclude admins
+    users = User.objects.filter(userprofile__company=company).exclude(userprofile__role='admin')
+
+    if request.method == "POST":
+        subject = request.POST.get("subject")
+        description = request.POST.get("description")
+        priority = request.POST.get("priority")
+        department = request.POST.get("department")
+        project = request.POST.get("project")
+        assigned_to = request.POST.get("assigned_to")
+        status = request.POST.get("status")
+
+        assigned_user = None
+        if assigned_to:
+            try:
+                assigned_user = User.objects.get(id=assigned_to)
+            except User.DoesNotExist:
+                pass
+
+        # Track changes for activity
+        changes = []
+        if ticket.subject != subject: changes.append(f"Subject changed")
+        if ticket.status != status: changes.append(f"Status: {ticket.status} -> {status}")
+        if ticket.assigned_to != assigned_user: 
+            old_name = ticket.assigned_to.username if ticket.assigned_to else "Unassigned"
+            new_name = assigned_user.username if assigned_user else "Unassigned"
+            changes.append(f"Assigned: {old_name} -> {new_name}")
+
+        ticket.subject = subject
+        ticket.description = description
+        ticket.priority = priority
+        ticket.department = department
+        ticket.project = project
+        ticket.assigned_to = assigned_user
+        ticket.status = status
+        ticket.save()
+
+        if changes:
+            TicketActivity.objects.create(
+                ticket=ticket,
+                user=request.user,
+                action=", ".join(changes) if len(", ".join(changes)) < 200 else "Ticket Updated"
+            )
+
+        messages.success(request, "Ticket updated successfully.")
+        return redirect("ticket_detail", id=ticket.id)
+
+    return render(
+        request,
+        "leads/edit_ticket.html",
+        {
+            "ticket": ticket,
+            "users": users,
+            "company": company,
+            "dashboard_url": get_dashboard_url(request.user),
+            "status_choices": Ticket.STATUS_CHOICES,
+            "priority_choices": Ticket.PRIORITY_CHOICES,
+        }
     )
 
 
@@ -1003,10 +1166,13 @@ def tickets_list(request):
         company=company
     ).order_by("-created_at")
 
+    # Determine Dashboard URL for Back Link
+    dashboard_url = get_dashboard_url(request.user)
+
     return render(
         request,
         "leads/tickets_list.html",
-        {"tickets": tickets, "company": company}
+        {"tickets": tickets, "company": company, "dashboard_url": dashboard_url}
     )
 
 
@@ -1036,7 +1202,8 @@ def ticket_detail(request, id):
         {
             "ticket": ticket,
             "activities": activities,
-            "company": company
+            "company": company,
+            "dashboard_url": get_dashboard_url(request.user)
         }
     )
 
@@ -1058,6 +1225,11 @@ def delete_ticket(request, id):
         id=id,
         company=company
     )
+
+    # Ownership Check: Only assignee or admin can delete
+    if ticket.assigned_to != request.user and profile.role != 'admin':
+        messages.error(request, "Permission denied. You can only delete tickets assigned to you.")
+        return redirect("ticket_detail", id=ticket.id)
 
     ticket.delete()
 
@@ -1222,6 +1394,9 @@ def mdashboard(request):
         "company": company,
     }
 
+    # Set Dashboard Context for Managers
+    request.session['dashboard_context'] = 'main'
+
     return render(request, "leads/Mdashboard.html", context)
 
 @login_required
@@ -1252,13 +1427,23 @@ def employee_dashboard(request):
     else:
         tickets = Ticket.objects.filter(company=company).order_by("-created_at")
 
+    # Fetch users for Editor role (same as users_list logic)
+    users = UserProfile.objects.none()
+    if getattr(profile, 'role', None) == "editor":
+        users = UserProfile.objects.filter(company=company).exclude(role="admin")
+
     context = {
         "company": company,
         "tickets": tickets,
+        "users": users,
         "role": role,
         "full_name": f"{request.user.first_name} {request.user.last_name}".strip() or request.user.username,
         "user": request.user
     }
+
+    # Set Dashboard Context for Managers
+    if profile and profile.role == "manager":
+        request.session['dashboard_context'] = 'secondary'
 
     return render(
         request,
@@ -1283,11 +1468,22 @@ def employee_profile(request):
         
     full_name = f"{request.user.first_name} {request.user.last_name}".strip() or request.user.username
 
+    # Determine Dashboard URL for Back Link
+    dashboard_url = 'employee_dashboard'
+    if getattr(profile, 'role', None) == "manager":
+        context_type = request.session.get('dashboard_context', 'main')
+        dashboard_url = 'manager_dashboard' if context_type == 'main' else 'employee_dashboard'
+    elif getattr(profile, 'role', None) == 'admin':
+        dashboard_url = 'company_admin_dashboard'
+    elif request.user.is_superuser:
+        dashboard_url = 'superadmin_dashboard'
+
     return render(request, "leads/profile.html", {
         "user": request.user,
         "first_name": request.user.first_name,
         "last_name": request.user.last_name,
         "profile": profile,
         "company": (profile.company if profile else None) if (profile.company if profile else None) else None,
-        "full_name": full_name
+        "full_name": full_name,
+        "dashboard_url": dashboard_url
     })

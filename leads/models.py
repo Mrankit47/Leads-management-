@@ -27,6 +27,16 @@ class Company(models.Model):
     def __str__(self):
         return self.name
 
+class Department(models.Model):
+    name = models.CharField(max_length=100)
+    company = models.ForeignKey(Company, on_delete=models.CASCADE, related_name="departments")
+
+    class Meta:
+        unique_together = ('name', 'company')
+
+    def __str__(self):
+        return f"{self.name} ({self.company.name})"
+
 class UserProfile(models.Model):
 
     ROLE_CHOICES = (
@@ -38,13 +48,6 @@ class UserProfile(models.Model):
         ("employee", "Employee"),
     )
 
-    DEPARTMENT_CHOICES = (
-        ("sales", "Sales"),
-        ("marketing", "Marketing"),
-        ("support", "Support"),
-        ("operations", "Operations"),
-    )
-
     user = models.OneToOneField(User, on_delete=models.CASCADE)
 
     company = models.ForeignKey(Company, on_delete=models.CASCADE, null=True, blank=True)
@@ -53,7 +56,7 @@ class UserProfile(models.Model):
 
     contact = models.CharField(max_length=20, blank=True)
 
-    department = models.CharField(max_length=50, choices=DEPARTMENT_CHOICES, blank=True)
+    department = models.ForeignKey(Department, on_delete=models.SET_NULL, null=True, blank=True)
 
     def __str__(self):
         return f"{self.user.username} - {self.role}"

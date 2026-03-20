@@ -48,7 +48,7 @@
 <div class="min-h-screen py-8 px-4 sm:px-6 lg:px-12">
     <!-- Top Bar with Back Connection -->
     <div class="max-w-[1600px] mx-auto mb-10 flex items-center justify-between">
-        <a href="{% if user.userprofile.role == 'admin' %}{% url 'company_admin_dashboard' %}{% elif user.userprofile.role == 'manager' %}{% url 'manager_dashboard' %}{% else %}{% url 'home' %}{% endif %}" 
+        <a href="{% url dashboard_url %}" 
            class="inline-flex items-center text-sm font-bold text-blue-600 hover:text-blue-800 transition-all group">
             <div class="w-10 h-10 rounded-2xl bg-white shadow-sm flex items-center justify-center mr-3 group-hover:-translate-x-1 transition-transform border border-blue-50">
                 <i class="fa-solid fa-arrow-left text-xs"></i>

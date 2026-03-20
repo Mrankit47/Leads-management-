@@ -72,10 +72,9 @@
                 <div class="space-y-1.5">
                     <label class="block text-sm font-bold text-gray-700 uppercase tracking-wider">Department</label>
                     <select name="department" class="w-full px-4 py-3 bg-gray-50 border-2 border-gray-100 rounded-xl focus:border-blue-500 focus:bg-white outline-none transition-all duration-200 cursor-pointer">
-                        <option value="sales" {% if profile.department == 'sales' %}selected{% endif %}>Sales</option>
-                        <option value="marketing" {% if profile.department == 'marketing' %}selected{% endif %}>Marketing</option>
-                        <option value="support" {% if profile.department == 'support' %}selected{% endif %}>Support</option>
-                        <option value="operations" {% if profile.department == 'operations' %}selected{% endif %}>Operations</option>
+                        {% for dept in available_departments %}
+                        <option value="{{ dept.id }}" {% if profile.department.id == dept.id %}selected{% endif %}>{{ dept.name }}</option>
+                        {% endfor %}
                     </select>
                 </div>
 
@@ -83,11 +82,9 @@
                 <div class="space-y-1.5">
                     <label class="block text-sm font-bold text-gray-700 uppercase tracking-wider">Assigned Role</label>
                     <select name="role" class="w-full px-4 py-3 bg-gray-50 border-2 border-gray-100 rounded-xl focus:border-blue-500 focus:bg-white outline-none transition-all duration-200 cursor-pointer">
-                        <option value="admin" {% if profile.role == 'admin' %}selected{% endif %}>Admin</option>
-                        <option value="manager" {% if profile.role == 'manager' %}selected{% endif %}>Manager</option>
-                        <option value="editor" {% if profile.role == 'editor' %}selected{% endif %}>Editor</option>
-                        <option value="employee" {% if profile.role == 'employee' %}selected{% endif %}>Employee</option>
-                        <option value="hybrid" {% if profile.role == 'hybrid' %}selected{% endif %}>Hybrid</option>
+                        {% for role_code, role_name in assignable_roles %}
+                        <option value="{{ role_code }}" {% if profile.role == role_code %}selected{% endif %}>{{ role_name }}</option>
+                        {% endfor %}
                     </select>
                 </div>
                 {% endif %}
