@@ -13,47 +13,63 @@ from django.core.paginator import Paginator
 from io import StringIO
 
 from django.contrib.auth.models import User
-from django.contrib.auth import authenticate, login
-from django.contrib.auth import logout
-
-from .models import Lead, LeadActivity, Ticket, Company, UserProfile
-from .forms import InquiryForm, LeadUpdateForm
-from .models import TicketActivity
+from django.contrib.auth import authenticate, login, logout
+from subscriptions.services import check_lead_limit, check_user_limit
+from subscriptions.services import check_user_limit
+from leads.models import Lead, LeadActivity, Ticket, Company, UserProfile, TicketActivity
+from leads.forms import InquiryForm, LeadUpdateForm
 
 
 # ---------------- RBAC HELPERS ---------------- #
 
 def is_superadmin(user):
-    return hasattr(user, "userprofile") and user.userprofile.role == "superadmin"
+    """Check if user has superadmin role"""
+    profile = getattr(user, 'userprofile', None)
+    return profile is not None and profile.role == "superadmin"
 
 
 def is_admin(user):
-    return hasattr(user, "userprofile") and user.userprofile.role == "admin"
+    """Check if user has admin role"""
+    profile = getattr(user, 'userprofile', None)
+    return profile is not None and profile.role == "admin"
 
 
 def is_manager(user):
-    return hasattr(user, "userprofile") and user.userprofile.role == "manager"
+    """Check if user has manager role"""
+    profile = getattr(user, 'userprofile', None)
+    return profile is not None and profile.role == "manager"
 
 
 def is_editor(user):
-    return hasattr(user, "userprofile") and user.userprofile.role == "editor"
+    """Check if user has editor role"""
+    profile = getattr(user, 'userprofile', None)
+    return profile is not None and profile.role == "editor"
 
 
 def is_hybrid(user):
-    return hasattr(user, "userprofile") and user.userprofile.role == "hybrid"
+    """Check if user has hybrid role"""
+    profile = getattr(user, 'userprofile', None)
+    return profile is not None and profile.role == "hybrid"
 
 
 def is_employee(user):
-    return hasattr(user, "userprofile") and user.userprofile.role == "employee"
+    """Check if user has employee role"""
+    profile = getattr(user, 'userprofile', None)
+    return profile is not None and profile.role == "employee"
 
 
 def is_sales_team(user):
-    return hasattr(user, "userprofile") and user.userprofile.role in ["admin", "manager", "editor", "employee", "hybrid"]
+    """Check if user belongs to any sales/management role"""
+    profile = getattr(user, 'userprofile', None)
+    return profile is not None and profile.role in ["admin", "manager", "editor", "employee", "hybrid"]
 
 
 # ---------------- PUBLIC INQUIRY FORM ---------------- #
 
 def landing_page(request):
+    """Public landing page. Redirects authenticated users to the dashboard."""
+    if request.user.is_authenticated:
+        return redirect("dashboard")
     return render(request, "leads/landing.html")
 
 def inquiry_form(request):
@@ -69,7 +85,6 @@ def inquiry_form(request):
 
             selected_company = form.cleaned_data['company']
 
-            from subscriptions.services import check_lead_limit
             can_add_lead, lead_msg = check_lead_limit(selected_company)
             if not can_add_lead:
                 messages.error(request, lead_msg)
@@ -108,68 +123,77 @@ def inquiry_form(request):
 
 # ---------------- PUBLIC CHATBOT SUBMIT ---------------- #
 
+@csrf_exempt
+@require_POST
 def chatbot_submit(request):
-    if request.method == "POST":
-        try:
-            data = json.loads(request.body)
-            # The chatbot collects name, email, phone, company, product_name, message
-            
-            # For simplicity, if company name is provided, try to find one, else use a default or handle appropriately
-            # Since landing page has no company context, we'll assign it to the first active company or superadmin logic
-            # Let's try to map it to the first available company for generic inquiries if no specific company is selected
-            company_obj = Company.objects.filter(is_active=True).first()
-            if not company_obj:
-                return JsonResponse({"ok": False, "error": "No active company found to assign this lead to."})
+    """
+    Public API endpoint for the chatbot to submit inquiries.
+    Automatically creates a Lead and a corresponding Ticket for the first active company.
+    """
+    try:
+        data = json.loads(request.body)
+        
+        # Assign to the first active company in the system
+        company_obj = Company.objects.filter(is_active=True).first()
+        if not company_obj:
+            return JsonResponse({"ok": False, "error": "No active company found."}, status=404)
 
-            from subscriptions.services import check_lead_limit
-            can_add_lead, lead_msg = check_lead_limit(company_obj)
-            if not can_add_lead:
-                return JsonResponse({"ok": False, "error": "System limit reached. Cannot process inquiry."})
+        # Check lead limits for the subscription
+        can_add_lead, lead_msg = check_lead_limit(company_obj)
+        if not can_add_lead:
+            return JsonResponse({"ok": False, "error": lead_msg}, status=403)
 
-            lead = Lead.objects.create(
-                name=data.get("name", "Unknown"),
-                email=data.get("email", ""),
-                phone=data.get("phone", ""),
-                company_name_text=data.get("company", ""),
-                product_name=data.get("product_name", "Chat Inquiry"),
-                product_description=data.get("message", ""),
-                status="inquiry",
-                company=company_obj
-            )
+        # Create the lead
+        lead = Lead.objects.create(
+            name=data.get("name", "Unknown"),
+            email=data.get("email", ""),
+            phone=data.get("phone", ""),
+            customer_company=data.get("company", ""),
+            product_name=data.get("product_name", "Chat Inquiry"),
+            product_description=data.get("message", ""),
+            status="inquiry",
+            company=company_obj
+        )
 
-            ticket = Ticket.objects.create(
-                lead=lead,
-                subject=lead.product_name,
-                description=lead.product_description,
-                customer_name=lead.name,
-                customer_email=lead.email,
-                customer_phone=lead.phone,
-                status="open",
-                source="chatbot",
-                company=company_obj,
-            )
+        # Create the ticket
+        ticket = Ticket.objects.create(
+            lead=lead,
+            subject=lead.product_name,
+            description=lead.product_description,
+            customer_name=lead.name,
+            customer_email=lead.email,
+            customer_phone=lead.phone,
+            status="open",
+            source="chatbot",
+            company=company_obj,
+        )
 
-            LeadActivity.objects.create(
-                lead=lead,
-                user=None,
-                action="Lead + Ticket created from chatbot",
-                new_status="inquiry",
-            )
+        # Log the activity
+        LeadActivity.objects.create(
+            lead=lead,
+            user=None,
+            action="Lead + Ticket created from chatbot",
+            new_status="inquiry",
+        )
 
-            return JsonResponse({"ok": True, "ticket_id": ticket.id})
-        except Exception as e:
-            return JsonResponse({"ok": False, "error": str(e)})
+        return JsonResponse({"ok": True, "ticket_id": ticket.id, "lead_id": lead.id})
 
-    return JsonResponse({"ok": False, "error": "Invalid request method."})
+    except json.JSONDecodeError:
+        return JsonResponse({"ok": False, "error": "Invalid JSON payload."}, status=400)
+    except Exception as e:
+        return JsonResponse({"ok": False, "error": str(e)}, status=500)
 
 @login_required
 @require_POST
 def update_whatsapp_settings(request):
-    profile = request.user.userprofile
-    if profile.role not in ["admin", "manager"]:
+    profile = getattr(request.user, 'userprofile', None)
+    if getattr(profile, 'role', None) not in ["admin", "manager"]:
         return JsonResponse({"ok": False, "error": "Permission denied"}, status=403)
     
-    company = profile.company
+    company = getattr(profile, 'company', None) if profile else None
+    if not company:
+        return JsonResponse({"ok": False, "error": "Company not found"}, status=404)
+        
     data = json.loads(request.body)
     
     company.whatsapp_instance_id = data.get("instance_id")
@@ -181,11 +205,14 @@ def update_whatsapp_settings(request):
 @login_required
 @require_POST
 def update_gmail_settings(request):
-    profile = request.user.userprofile
-    if profile.role not in ["admin", "manager"]:
+    profile = getattr(request.user, 'userprofile', None)
+    if getattr(profile, 'role', None) not in ["admin", "manager"]:
         return JsonResponse({"ok": False, "error": "Permission denied"}, status=403)
     
-    company = profile.company
+    company = getattr(profile, 'company', None) if profile else None
+    if not company:
+        return JsonResponse({"ok": False, "error": "Company not found"}, status=404)
+        
     data = json.loads(request.body)
     
     company.gmail_email = data.get("email")
@@ -210,11 +237,8 @@ def superadmin_login(request):
             messages.error(request, "Invalid username or password")
             return redirect("superadmin_login")
 
-        if not hasattr(user, "userprofile"):
-            messages.error(request, "User profile missing")
-            return redirect("superadmin_login")
-
-        if user.userprofile.role != "superadmin":
+        profile = getattr(user, 'userprofile', None)
+        if not profile or profile.role != "superadmin":
             messages.error(request, "You are not a superadmin")
             return redirect("superadmin_login")
 
@@ -303,8 +327,9 @@ def create_company(request):
             profile, created = UserProfile.objects.get_or_create(user=admin_user)
 
             profile.role = "admin"
-            profile.company = company
-            profile.save()
+            if profile:
+                profile.company = company
+                profile.save()
 
             messages.success(request, "Company created successfully")
 
@@ -340,8 +365,8 @@ def some_view(request):
 @login_required
 @user_passes_test(is_sales_team)
 def dashboard(request):
-    profile = request.user.userprofile
-    company = profile.company
+    profile = getattr(request.user, 'userprofile', None)
+    company = (profile.company if profile else None)
 
     # Get query params for filtering
     status_filter = request.GET.get("status")
@@ -405,11 +430,14 @@ def dashboard(request):
 
 # ---------------- LEAD DETAIL ---------------- #
 
+
+
 @login_required
 @user_passes_test(is_sales_team)
 def lead_detail(request, lead_id):
-
-    company = request.user.userprofile.company
+    """Detailed view for a single lead"""
+    profile = getattr(request.user, 'userprofile', None)
+    company = getattr(profile, 'company', None) if profile else None
 
     lead = get_object_or_404(
         Lead,
@@ -424,7 +452,7 @@ def lead_detail(request, lead_id):
     if request.method == "POST":
         form = LeadUpdateForm(request.POST, instance=lead, company=company)
         
-        # Handle ticket updates if ticket exists
+        # Extract ticket fields
         if ticket:
             priority = request.POST.get('priority')
             department = request.POST.get('department')
@@ -432,19 +460,36 @@ def lead_detail(request, lead_id):
             if priority: ticket.priority = priority
             if department: ticket.department = department
             if project: ticket.project = project
-            ticket.save()
 
         if form.is_valid():
             old_status = lead.status
+            old_assigned_to = lead.assigned_to
             updated_lead = form.save()
+            
+            # Sync to Ticket
+            if ticket:
+                ticket.status = updated_lead.status
+                ticket.assigned_to = updated_lead.assigned_to
+                ticket.save()
 
+            # Log Status Change
             if old_status != updated_lead.status:
-
                 LeadActivity.objects.create(
                     lead=updated_lead,
                     user=request.user,
                     action=f"Status changed to {updated_lead.get_status_display()}",
                     old_status=old_status,
+                    new_status=updated_lead.status,
+                )
+            
+            # Log Reassignment Change
+            if old_assigned_to != updated_lead.assigned_to:
+                assignee_name = updated_lead.assigned_to.get_full_name() or updated_lead.assigned_to.username if updated_lead.assigned_to else "Unassigned"
+                LeadActivity.objects.create(
+                    lead=updated_lead,
+                    user=request.user,
+                    action=f"Lead reassigned to {assignee_name}",
+                    old_status=updated_lead.status,
                     new_status=updated_lead.status,
                 )
 
@@ -470,7 +515,14 @@ def lead_detail(request, lead_id):
 @login_required
 @user_passes_test(is_sales_team)
 def delete_lead(request, lead_id):
-    company = request.user.userprofile.company
+    """Deletes a specific lead."""
+    profile = getattr(request.user, 'userprofile', None)
+    company = getattr(profile, 'company', None) if profile else None
+ 
+    if not company:
+        messages.error(request, "User profile or company not found.")
+        return redirect("dashboard")
+
     lead = get_object_or_404(Lead, id=lead_id, company=company)
     
     if request.method == "POST":
@@ -485,8 +537,13 @@ def delete_lead(request, lead_id):
 @login_required
 @user_passes_test(is_manager)
 def manager_dashboard(request):
-    profile = request.user.userprofile
-    company = profile.company
+    """Displays the manager dashboard with company users and roles."""
+    profile = getattr(request.user, 'userprofile', None)
+    company = getattr(profile, 'company', None) if profile else None
+ 
+    if not profile or not company:
+        messages.error(request, "User profile or company not found.")
+        return redirect("login")
 
     # Company Users (strictly excluding Admins, Superadmins, and the manager themselves)
     users = UserProfile.objects.filter(
@@ -502,7 +559,7 @@ def manager_dashboard(request):
 
     context = {
         "company": company,
-        "role": profile.role,
+        "role": getattr(profile, 'role', None),
         "users_list": users,
         "manageable_roles": manageable_roles,
     }
@@ -516,8 +573,12 @@ def manager_dashboard(request):
 @login_required
 @require_POST
 def update_user_role(request):
-    profile = request.user.userprofile
-    if profile.role not in ["admin", "manager"]:
+    """Updates the role of a user within the company via AJAX."""
+    profile = getattr(request.user, 'userprofile', None)
+    if not profile:
+        return JsonResponse({"ok": False, "error": "User profile not found"}, status=403)
+
+    if (profile.role if profile else None) not in ["admin", "manager"]:
         return JsonResponse({"ok": False, "error": "Permission denied"}, status=403)
     
     data = json.loads(request.body)
@@ -527,7 +588,8 @@ def update_user_role(request):
     if new_role not in ["editor", "hybrid", "employee"]:
         return JsonResponse({"ok": False, "error": "Invalid role assignment"}, status=400)
     
-    target_profile = get_object_or_404(UserProfile, user_id=user_id, company=profile.company)
+    company = getattr(profile, 'company', None) if profile else None
+    target_profile = get_object_or_404(UserProfile, user_id=user_id, company=company)
     
     # Manager cannot change Admin/Superadmin roles even if they knew the ID
     if target_profile.role in ["admin", "superadmin"]:
@@ -540,55 +602,6 @@ def update_user_role(request):
 
 # ---------------- CHATBOT API ---------------- #
 
-@csrf_exempt
-@require_POST
-def chatbot_submit(request):
-
-    payload = json.loads(request.body.decode("utf-8"))
-
-    company = Company.objects.first()
-
-    from subscriptions.services import check_lead_limit
-    can_add_lead, lead_msg = check_lead_limit(company)
-    if not can_add_lead:
-        return JsonResponse({"ok": False, "error": lead_msg}, status=403)
-
-    lead = Lead.objects.create(
-        name=payload.get("name"),
-        email=payload.get("email"),
-        phone=payload.get("phone"),
-        product_name=payload.get("product_name"),
-        product_description=payload.get("message"),
-        status="inquiry",
-        company=company,
-    )
-
-    ticket = Ticket.objects.create(
-        lead=lead,
-        subject=payload.get("product_name"),
-        description=payload.get("message"),
-        customer_name=payload.get("name"),
-        customer_email=payload.get("email"),
-        customer_phone=payload.get("phone"),
-        status="open",
-        source="chatbot",
-        company=company,
-    )
-
-    LeadActivity.objects.create(
-        lead=lead,
-        user=None,
-        action="Lead + Ticket created from chatbot",
-        new_status="inquiry",
-    )
-
-    return JsonResponse(
-        {
-            "ok": True,
-            "lead_id": lead.id,
-            "ticket_id": ticket.id,
-        }
-    )
 
 
 # ---------------- EMAIL FETCH ---------------- #
@@ -597,10 +610,15 @@ def chatbot_submit(request):
 @user_passes_test(is_manager)
 @require_POST
 def fetch_email_inquiries(request):
-
+    """Fetches email inquiries for the company using a management command."""
     out = StringIO()
 
-    company = request.user.userprofile.company
+    profile = getattr(request.user, 'userprofile', None)
+    company = (profile.company if profile else None) if profile else None
+
+    if not company:
+        messages.error(request, "User profile or company not found.")
+        return redirect("some_error_page") # Or a more appropriate redirect
     
     try:
         kwargs = {
@@ -638,6 +656,7 @@ def fetch_email_inquiries(request):
     return redirect("manager_dashboard")
 
 def user_logout(request):
+    """Logs out the current user and redirects to the superadmin login page."""
     logout(request)
     return redirect("superadmin_login")
 
@@ -645,7 +664,7 @@ def user_logout(request):
 #--------------Employee Login & Dashboards----------------#
 
 def employee_login(request):
-
+    """Handles employee login and redirects based on user role."""
     if request.method == "POST":
 
         username = request.POST.get("username")
@@ -655,22 +674,27 @@ def employee_login(request):
 
         if user is not None:
             # Check for superadmin role before logging in
-            if hasattr(user, 'userprofile') and user.userprofile.role == "superadmin":
+            profile = getattr(user, 'userprofile', None)
+            if profile and (profile.role if profile else None) == "superadmin":
                 messages.error(request, "Superadmins must use the SuperAdmin Login portal.")
                 return redirect("login")
 
             login(request, user)
 
-            role = user.userprofile.role
+            if profile: # Ensure profile exists before accessing role
+                role = getattr(profile, 'role', None)
 
-            if role == "admin":
-                return redirect("company_admin_dashboard")
-            elif role == "manager":
-                return redirect("manager_dashboard")
-            elif role in ["editor", "employee", "hybrid"]:
-                return redirect("employee_dashboard")
+                if role == "admin":
+                    return redirect("company_admin_dashboard")
+                elif role == "manager":
+                    return redirect("manager_dashboard")
+                elif role in ["editor", "employee", "hybrid"]:
+                    return redirect("employee_dashboard")
+                else:
+                    return redirect("dashboard")
             else:
-                return redirect("dashboard")
+                messages.error(request, "User profile not found.")
+                return redirect("login")
         else:
             messages.error(request, "Invalid username or password.")
             return redirect("login")
@@ -680,9 +704,13 @@ def employee_login(request):
 @login_required
 @user_passes_test(is_admin)
 def company_admin_dashboard(request):
+    """Displays the company admin dashboard with company statistics and user list."""
+    profile = getattr(request.user, 'userprofile', None)
+    company = getattr(profile, 'company', None) if profile else None
 
-    profile = request.user.userprofile
-    company = profile.company
+    if not profile or not company:
+        messages.error(request, "User profile or company not found.")
+        return redirect("login") # Or a more appropriate redirect
 
     # Stats
     users_count = UserProfile.objects.filter(company=company).count()
@@ -695,6 +723,8 @@ def company_admin_dashboard(request):
     subscription = getattr(company, 'subscription', None)
     days_remaining = subscription.days_remaining() if subscription else 0
 
+    full_name = f"{request.user.first_name} {request.user.last_name}".strip() or request.user.username
+
     return render(
         request,
         "leads/company_admin_dashboard.html",
@@ -705,7 +735,7 @@ def company_admin_dashboard(request):
             "tickets_count": tickets_count,
             "users": users,
             "role": "Company Admin",
-            "full_name": f"{request.user.first_name} {request.user.last_name}".strip() or request.user.username,
+            "full_name": full_name,
             "subscription": subscription,
             "days_remaining": days_remaining,
         },
@@ -713,12 +743,16 @@ def company_admin_dashboard(request):
 
 @login_required
 def create_user(request):
+    """Handles the creation of new users within a company."""
+    profile = getattr(request.user, 'userprofile', None)
+    company = getattr(profile, 'company', None) if profile else None
 
-    profile = request.user.userprofile
-    company = profile.company
+    if not profile or not company:
+        messages.error(request, "User profile or company not found.")
+        return redirect("login") # Or a more appropriate redirect
 
     # Security: Only Admin and Manager can create users
-    if profile.role not in ["admin", "manager"]:
+    if getattr(profile, 'role', None) not in ["admin", "manager"]:
         messages.error(request, "Permission denied.")
         return redirect("users_list")
 
@@ -729,7 +763,6 @@ def create_user(request):
         username = request.POST.get("username")
         email = request.POST.get("email")
         
-        from subscriptions.services import check_user_limit
         can_create, message = check_user_limit(company)
         if not can_create:
             messages.error(request, message)
@@ -747,7 +780,7 @@ def create_user(request):
             return redirect("create_user")
 
         # manager role restriction
-        if profile.role == "manager":
+        if getattr(profile, 'role', None) == "manager":
             if role not in ["editor", "employee", "hybrid"]:
                 messages.error(request, "Manager can only assign editor, employee or hybrid role")
                 return redirect("create_user")
@@ -784,18 +817,22 @@ def create_user(request):
 
 @login_required
 def users_list(request):
+    """Displays a list of users within the current user's company, with role-based filtering."""
+    profile = getattr(request.user, 'userprofile', None)
+    company = getattr(profile, 'company', None) if profile else None
 
-    profile = request.user.userprofile
-    company = profile.company
+    if not profile or not company:
+        messages.error(request, "User profile or company not found.")
+        return redirect("login") # Or a more appropriate redirect
 
     users = UserProfile.objects.filter(company=company)
 
     # Manager restrictions (already existed, keeping for safety)
-    if profile.role == "manager":
+    if getattr(profile, 'role', None) == "manager":
         users = users.exclude(role="admin")
 
     # Editor/Employee/Hybrid restrictions
-    if profile.role in ["editor", "employee", "hybrid"]:
+    if getattr(profile, 'role', None) in ["editor", "employee", "hybrid"]:
         users = users.exclude(role__in=["admin", "manager"])
 
     return render(
@@ -803,24 +840,30 @@ def users_list(request):
         "leads/users_list.html",
         {
             "users": users,
-            "role": profile.role.capitalize(),
+            "role": str(getattr(profile, 'role', None)).capitalize(),
             "company": company
         }
     )
 
 @login_required
 def delete_user(request, user_id):
+    """Deletes a user from the company."""
+    profile = getattr(request.user, 'userprofile', None)
 
-    profile = request.user.userprofile
+    if not profile:
+        messages.error(request, "User profile not found.")
+        return redirect("some_error_page") # Or a more appropriate redirect
 
     # Security: Only Admin and Manager can delete users
-    if profile.role not in ["admin", "manager"]:
+    if getattr(profile, 'role', None) not in ["admin", "manager"]:
         messages.error(request, "Permission denied.")
         return redirect("users_list")
 
     user = User.objects.get(id=user_id)
+    target_profile = getattr(user, 'userprofile', None)
 
-    if user.userprofile.company != profile.company:
+    if not target_profile or target_profile.company != getattr(profile, 'company', None):
+        messages.error(request, "Access denied or target user profile not found.")
         return redirect("users_list")
 
     user.delete()
@@ -829,18 +872,31 @@ def delete_user(request, user_id):
 
 @login_required
 def edit_user(request, user_id):
+    """Handles editing of a user's profile within the company."""
+    profile = getattr(request.user, 'userprofile', None)
+    company = getattr(profile, 'company', None) if profile else None
 
-    profile = request.user.userprofile
+    if not profile or not company:
+        messages.error(request, "User profile or company not found.")
+        return redirect("login") # Or a more appropriate redirect
+
     target_user = get_object_or_404(User, id=user_id)
-    target_profile = target_user.userprofile
-
+    target_profile = getattr(target_user, 'userprofile', None)
+ 
+    if not target_profile:
+        messages.error(request, "Target user profile not found.")
+        return redirect("users_list")
+ 
     # security check (same company)
-    if target_profile.company != profile.company:
+    if target_profile.company != company:
         messages.error(request, "Access denied.")
         return redirect("users_list")
 
+
     # Role-based restriction: Editor cannot edit Admin/Manager
-    if profile.role == "editor" and target_profile.role in ["admin", "manager"]:
+    role = getattr(profile, 'role', None)
+    target_role = getattr(target_profile, 'role', None)
+    if role == "editor" and target_role in ["admin", "manager"]:
         messages.error(request, "Editors cannot edit Admin or Manager profiles.")
         return redirect("users_list")
 
@@ -851,26 +907,24 @@ def edit_user(request, user_id):
         target_user.username = request.POST.get("username")
         target_user.email = request.POST.get("email")
         target_profile.contact = request.POST.get("contact")
-        
         # Only Admin can update role and department (as per requirements for Editor)
-        if profile.role == "admin":
-            target_profile.department = request.POST.get("department")
-            target_profile.role = request.POST.get("role")
-
-        target_user.save()
-        target_profile.save()
+        if getattr(profile, 'role', None) == "admin":
+            if target_profile:
+                target_profile.department = request.POST.get("department")
+                target_profile.role = request.POST.get("role")
+                target_profile.save()
         
         messages.success(request, "User updated successfully.")
         return redirect("users_list")
-
+ 
     return render(
         request,
         "leads/edit_user.html",
         {
             "user_obj": target_user,
             "profile": target_profile,
-            "is_admin": profile.role == "admin",
-            "company": profile.company
+            "is_admin": getattr(profile, 'role', None) == "admin",
+            "company": company
         }
     )
 
@@ -878,9 +932,13 @@ def edit_user(request, user_id):
 
 @login_required
 def create_ticket(request):
-
-    profile = request.user.userprofile
-    company = profile.company
+    """Handles the creation of a new support ticket."""
+    profile = getattr(request.user, 'userprofile', None)
+    company = getattr(profile, 'company', None) if profile else None
+ 
+    if not profile or not company:
+        messages.error(request, "User profile or company not found.")
+        return redirect("login")
 
     users = User.objects.filter(
         userprofile__company=company
@@ -933,8 +991,13 @@ def create_ticket(request):
 
 @login_required
 def tickets_list(request):
+    """Displays a list of all tickets for the current user's company."""
+    profile = getattr(request.user, 'userprofile', None)
+    company = getattr(profile, 'company', None) if profile else None
 
-    company = request.user.userprofile.company
+    if not company:
+        messages.error(request, "User profile or company not found.")
+        return redirect("some_error_page") # Or a more appropriate redirect
 
     tickets = Ticket.objects.filter(
         company=company
@@ -951,8 +1014,13 @@ def tickets_list(request):
 
 @login_required
 def ticket_detail(request, id):
+    """Displays the details of a specific ticket."""
+    profile = getattr(request.user, 'userprofile', None)
+    company = getattr(profile, 'company', None) if profile else None
 
-    company = request.user.userprofile.company
+    if not company:
+        messages.error(request, "User profile or company not found.")
+        return redirect("some_error_page") # Or a more appropriate redirect
 
     ticket = get_object_or_404(
         Ticket,
@@ -977,8 +1045,13 @@ def ticket_detail(request, id):
 
 @login_required
 def delete_ticket(request, id):
+    """Deletes a specific ticket."""
+    profile = getattr(request.user, 'userprofile', None)
+    company = getattr(profile, 'company', None) if profile else None
 
-    company = request.user.userprofile.company
+    if not company:
+        messages.error(request, "User profile or company not found.")
+        return redirect("some_error_page") # Or a more appropriate redirect
 
     ticket = get_object_or_404(
         Ticket,
@@ -995,7 +1068,7 @@ def delete_ticket(request, id):
 @login_required
 @user_passes_test(is_superadmin)
 def toggle_company_status(request, company_id):
-
+    """Toggles the active status of a company (activate/deactivate)."""
     company = get_object_or_404(Company, id=company_id)
 
     company.is_active = not company.is_active
@@ -1012,7 +1085,7 @@ def toggle_company_status(request, company_id):
 @login_required
 @user_passes_test(is_superadmin)
 def company_detail_view(request, company_id):
-
+    """Displays detailed information about a specific company for superadmins."""
     company = get_object_or_404(Company, id=company_id)
 
     company_admin = company.admin
@@ -1043,8 +1116,13 @@ def company_detail_view(request, company_id):
 @login_required
 @user_passes_test(is_admin)
 def adashboard(request):
+    """Displays the admin sales dashboard with company-wide lead and ticket statistics."""
+    profile = getattr(request.user, 'userprofile', None)
+    company = getattr(profile, 'company', None) if profile else None
 
-    company = request.user.userprofile.company
+    if not company:
+        messages.error(request, "User profile or company not found.")
+        return redirect("some_error_page") # Or a more appropriate redirect
 
     leads = Lead.objects.filter(company=company)
     tickets = Ticket.objects.filter(company=company).select_related("lead").order_by("-created_at")
@@ -1081,8 +1159,13 @@ def adashboard(request):
 @login_required
 @user_passes_test(is_manager)
 def mdashboard(request):
+    """Displays the manager sales dashboard with overall and per-sales-team member statistics."""
+    profile = getattr(request.user, 'userprofile', None)
+    company = getattr(profile, 'company', None) if profile else None
 
-    company = request.user.userprofile.company
+    if not company:
+        messages.error(request, "User profile or company not found.")
+        return redirect("some_error_page") # Or a more appropriate redirect
 
     leads = Lead.objects.filter(company=company)
 
@@ -1143,21 +1226,28 @@ def mdashboard(request):
 
 @login_required
 def editor_dashboard(request):
+    """Redirects editor users to the common employee dashboard."""
     return redirect("employee_dashboard")
 
 @login_required
 def hybrid_dashboard(request):
+    """Redirects hybrid users to the common employee dashboard."""
     return redirect("employee_dashboard")
-
 @login_required
 def employee_dashboard(request):
+    """Displays a common dashboard for employee, hybrid, and editor roles."""
+    profile = getattr(request.user, 'userprofile', None)
+    company = getattr(profile, 'company', None) if profile else None
+ 
+    if not profile or not company:
+        messages.error(request, "User profile or company not found.")
+        return redirect("login")
+ 
+    role = str(getattr(profile, 'role', None)).capitalize()
 
-    profile = request.user.userprofile
-    company = profile.company
-    role = profile.role.capitalize()
 
     # Assignment requirement: Employee/Hybrid/Editor should only see their assigned tickets
-    if profile.role in ["editor", "hybrid", "employee"]:
+    if getattr(profile, 'role', None) in ["editor", "hybrid", "employee"]:
         tickets = Ticket.objects.filter(company=company, assigned_to=request.user).order_by("-created_at")
     else:
         tickets = Ticket.objects.filter(company=company).order_by("-created_at")
@@ -1191,70 +1281,13 @@ def employee_profile(request):
         messages.success(request, "Profile updated successfully.")
         return redirect("employee_profile")
         
+    full_name = f"{request.user.first_name} {request.user.last_name}".strip() or request.user.username
+
     return render(request, "leads/profile.html", {
         "user": request.user,
         "first_name": request.user.first_name,
         "last_name": request.user.last_name,
         "profile": profile,
-        "company": profile.company if profile.company else None,
-        "full_name": f"{request.user.first_name} {request.user.last_name}".strip() or request.user.username
+        "company": (profile.company if profile else None) if (profile.company if profile else None) else None,
+        "full_name": full_name
     })
-
-# ---------------- PUBLIC CHATBOT SUBMIT ---------------- #
-
-@csrf_exempt
-def chatbot_submit(request):
-    if request.method == "POST":
-        try:
-            data = json.loads(request.body)
-            # The chatbot collects name, email, phone, company, product_name, message
-            
-            # Since landing page has no company context, assign it to the first active company
-            # We filter generically for active companies to ensure this runs out-of-the-box
-            company_obj = Company.objects.filter(is_active=True).first()
-            if not company_obj:
-                return JsonResponse({"ok": False, "error": "No active company found to assign this lead to."})
-
-            from subscriptions.services import check_lead_limit
-            can_add_lead, lead_msg = check_lead_limit(company_obj)
-            if not can_add_lead:
-                return JsonResponse({"ok": False, "error": "System limit reached. Cannot process inquiry."})
-
-            # Create lead
-            lead = Lead.objects.create(
-                name=data.get("name", "Unknown"),
-                email=data.get("email", ""),
-                phone=data.get("phone", ""),
-                company_name_text=data.get("company", ""),
-                product_name=data.get("product_name", "Chat Inquiry"),
-                product_description=data.get("message", ""),
-                status="inquiry",
-                company=company_obj
-            )
-
-            # Create ticket representing the chatbot inquiry
-            ticket = Ticket.objects.create(
-                lead=lead,
-                subject=lead.product_name,
-                description=lead.product_description,
-                customer_name=lead.name,
-                customer_email=lead.email,
-                customer_phone=lead.phone,
-                status="open",
-                source="chatbot",
-                company=company_obj,
-            )
-
-            # Log activity automatically
-            LeadActivity.objects.create(
-                lead=lead,
-                user=None,
-                action="Lead + Ticket created from chatbot",
-                new_status="inquiry",
-            )
-
-            return JsonResponse({"ok": True, "ticket_id": ticket.id})
-        except Exception as e:
-            return JsonResponse({"ok": False, "error": str(e)})
-
-    return JsonResponse({"ok": False, "error": "Invalid request method."})

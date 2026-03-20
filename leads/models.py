@@ -63,10 +63,14 @@ class Lead(models.Model):
 
     STATUS_CHOICES = [
         ('inquiry', 'Inquiry'),
+        ('running', 'Running'),
         ('proposal', 'Proposal'),
         ('negotiation', 'Negotiation'),
+        ('complete', 'Complete'),
         ('closer', 'Closer'),
         ('invoice', 'Invoice'),
+        ('on_hold', 'On Hold'),
+        ('cancelled', 'Cancelled'),
     ]
 
     # Customer information
@@ -122,8 +126,17 @@ class Ticket(models.Model):
 
     STATUS_CHOICES = [
         ('open', 'Open'),
+        ('running', 'Running'),
         ('in_progress', 'In Progress'),
+        ('complete', 'Complete'),
+        ('inquiry', 'Inquiry'),
+        ('proposal', 'Proposal'),
+        ('negotiation', 'Negotiation'),
+        ('closer', 'Closer'),
+        ('invoice', 'Invoice'),
         ('closed', 'Closed'),
+        ('on_hold', 'On Hold'),
+        ('cancelled', 'Cancelled'),
     ]
 
     SOURCE_CHOICES = [
@@ -239,7 +252,7 @@ class Ticket(models.Model):
     def save(self, *args, **kwargs):
 
         if not self.ticket_id:
-            self.ticket_id = "TCK-" + uuid.uuid4().hex[:6].upper()
+            self.ticket_id = "TCK-" + str(uuid.uuid4().hex)[:6].upper()
 
         super().save(*args, **kwargs)
 

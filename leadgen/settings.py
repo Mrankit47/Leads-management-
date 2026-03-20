@@ -167,9 +167,6 @@ LOGGING = {
         },
     },
 }
-LOGIN_URL = '/login/'
-LOGIN_REDIRECT_URL = '/dashboard/'
-LOGOUT_REDIRECT_URL = '/login/'
 
 # Session Security Configuration
 # Auto-logout after 30 minutes of inactivity (1800 seconds)

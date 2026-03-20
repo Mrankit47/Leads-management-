@@ -7,6 +7,10 @@ import json
 import hmac
 import hashlib
 import time
+import logging
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 # Configuration
 WEBHOOK_URL = "http://127.0.0.1:9000/webhook/mailgun/"
@@ -23,25 +27,25 @@ def create_signature(timestamp, token, key):
 
 def test_webhook_test_endpoint():
     """Test the test endpoint first"""
-    print("=" * 60)
-    print("Testing webhook test endpoint...")
-    print("=" * 60)
+    logger.info("=" * 60)
+    logger.info("Testing webhook test endpoint...")
+    logger.info("=" * 60)
     
     try:
         response = requests.get(TEST_URL)
-        print(f"Status Code: {response.status_code}")
-        print(f"Response: {json.dumps(response.json(), indent=2)}")
+        logger.info(f"Status Code: {response.status_code}")
+        logger.info(f"Response: {json.dumps(response.json(), indent=2)}")
         return True
     except Exception as e:
-        print(f"Error: {e}")
-        print("\nMake sure Django server is running: python manage.py runserver")
+        logger.info(f"Error: {e}")
+        logger.info("\nMake sure Django server is running: python manage.py runserver")
         return False
 
 def test_mailgun_webhook():
     """Test the actual Mailgun webhook with sample data"""
-    print("\n" + "=" * 60)
-    print("Testing Mailgun webhook with sample email data...")
-    print("=" * 60)
+    logger.info("\n" + "=" * 60)
+    logger.info("Testing Mailgun webhook with sample email data...")
+    logger.info("=" * 60)
     
     # Sample email data (what Mailgun typically sends)
     timestamp = str(int(time.time()))
@@ -63,39 +67,39 @@ def test_mailgun_webhook():
     }
     
     try:
-        print(f"\nSending POST request to: {WEBHOOK_URL}")
-        print(f"Data being sent:")
+        logger.info(f"\nSending POST request to: {WEBHOOK_URL}")
+        logger.info(f"Data being sent:")
         for key, value in data.items():
             if key in ['body-plain', 'body-html', 'stripped-text', 'stripped-html']:
-                print(f"  {key}: {value[:50]}...")
+                logger.info(f"  {key}: {str(value)[:50]}...")
             else:
-                print(f"  {key}: {value}")
+                logger.info(f"  {key}: {value}")
         
         response = requests.post(WEBHOOK_URL, data=data)
-        print(f"\nStatus Code: {response.status_code}")
-        print(f"Response: {response.text}")
+        logger.info(f"\nStatus Code: {response.status_code}")
+        logger.info(f"Response: {response.text}")
         
         if response.status_code == 200:
-            print("\n✅ SUCCESS! Webhook processed successfully!")
-            print("Check your Django console for logs and dashboard for new Lead/Ticket")
+            logger.info("\n✅ SUCCESS! Webhook processed successfully!")
+            logger.info("Check your Django console for logs and dashboard for new Lead/Ticket")
         else:
-            print(f"\n❌ ERROR: Status code {response.status_code}")
+            logger.info(f"\n❌ ERROR: Status code {response.status_code}")
             
         return response.status_code == 200
         
     except requests.exceptions.ConnectionError:
-        print("\n❌ ERROR: Could not connect to server")
-        print("Make sure Django server is running: python manage.py runserver 9000")
+        logger.info("\n❌ ERROR: Could not connect to server")
+        logger.info("Make sure Django server is running: python manage.py runserver 9000")
         return False
     except Exception as e:
-        print(f"\n❌ ERROR: {e}")
+        logger.info(f"\n❌ ERROR: {e}")
         return False
 
 def test_with_different_formats():
     """Test with different Mailgun webhook formats"""
-    print("\n" + "=" * 60)
-    print("Testing with alternative Mailgun format...")
-    print("=" * 60)
+    logger.info("\n" + "=" * 60)
+    logger.info("Testing with alternative Mailgun format...")
+    logger.info("=" * 60)
     
     timestamp = str(int(time.time()))
     token = "test_token_67890"
@@ -113,18 +117,18 @@ def test_with_different_formats():
     
     try:
         response = requests.post(WEBHOOK_URL, data=data)
-        print(f"Status Code: {response.status_code}")
-        print(f"Response: {response.text}")
+        logger.info(f"Status Code: {response.status_code}")
+        logger.info(f"Response: {response.text}")
         return response.status_code == 200
     except Exception as e:
-        print(f"Error: {e}")
+        logger.info(f"Error: {e}")
         return False
 
 def test_subject_filter():
     """Test that emails without 'Inquiry' in subject are ignored"""
-    print("\n" + "=" * 60)
-    print("Testing subject filter - email WITHOUT 'Inquiry' should be ignored...")
-    print("=" * 60)
+    logger.info("\n" + "=" * 60)
+    logger.info("Testing subject filter - email WITHOUT 'Inquiry' should be ignored...")
+    logger.info("=" * 60)
     
     timestamp = str(int(time.time()))
     token = "test_token_filter"
@@ -142,32 +146,32 @@ def test_subject_filter():
     
     try:
         response = requests.post(WEBHOOK_URL, data=data)
-        print(f"Status Code: {response.status_code}")
-        print(f"Response: {response.text}")
+        logger.info(f"Status Code: {response.status_code}")
+        logger.info(f"Response: {response.text}")
         
         if "ignored" in response.text.lower() or "subject filter" in response.text.lower():
-            print("✅ CORRECT: Email was ignored (no 'Inquiry' in subject)")
-            print(f"   Response: {response.text}")
+            logger.info("✅ CORRECT: Email was ignored (no 'Inquiry' in subject)")
+            logger.info(f"   Response: {response.text}")
             return True
         elif response.text.strip() == "OK":
-            print("⚠️  WARNING: Email was processed but should have been ignored")
-            print(f"   Response: {response.text}")
+            logger.info("⚠️  WARNING: Email was processed but should have been ignored")
+            logger.info(f"   Response: {response.text}")
             return False
         else:
-            print(f"✅ Email filtered correctly. Response: {response.text}")
+            logger.info(f"✅ Email filtered correctly. Response: {response.text}")
             return True
     except Exception as e:
-        print(f"Error: {e}")
+        logger.info(f"Error: {e}")
         return False
 
 if __name__ == "__main__":
-    print("\n" + "=" * 60)
-    print("MAILGUN WEBHOOK TEST SCRIPT")
-    print("=" * 60)
+    logger.info("\n" + "=" * 60)
+    logger.info("MAILGUN WEBHOOK TEST SCRIPT")
+    logger.info("=" * 60)
     
     # Test 1: Test endpoint
     if not test_webhook_test_endpoint():
-        print("\n⚠️  Test endpoint failed. Check if server is running.")
+        logger.info("\n⚠️  Test endpoint failed. Check if server is running.")
         exit(1)
     
     # Test 2: Main webhook
@@ -179,10 +183,10 @@ if __name__ == "__main__":
     # Test 4: Subject filter
     test_subject_filter()
     
-    print("\n" + "=" * 60)
+    logger.info("\n" + "=" * 60)
     if success:
-        print("✅ Tests completed! Check your dashboard for new leads/tickets.")
-        print("📧 Note: Only emails with 'Inquiry' or 'Enquiry' in subject are processed")
+        logger.info("✅ Tests completed! Check your dashboard for new leads/tickets.")
+        logger.info("📧 Note: Only emails with 'Inquiry' or 'Enquiry' in subject are processed")
     else:
-        print("❌ Some tests failed. Check the errors above.")
-    print("=" * 60)
+        logger.info("❌ Some tests failed. Check the errors above.")
+    logger.info("=" * 60)
