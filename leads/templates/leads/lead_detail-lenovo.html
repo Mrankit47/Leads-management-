@@ -1,0 +1,278 @@
+{% extends 'leads/base.html' %}
+{% load static %}
+
+{% block title %}Lead Details | LeadGen Tracker{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Hide Navbar and Footer for focused experience */
+    .navbar, .footer { display: none !important; }
+    
+    body { 
+        background: linear-gradient(135deg, #f8fafc 0%, #eff6ff 50%, #dbeafe 100%);
+        min-height: screen;
+        font-family: 'Inter', sans-serif;
+    }
+
+    .glass-card {
+        background: rgba(255, 255, 255, 0.8);
+        backdrop-filter: blur(12px);
+        border: 1px solid rgba(255, 255, 255, 0.5);
+        box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.07);
+    }
+
+    .info-label {
+        font-size: 10px;
+        font-weight: 900;
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+        color: #1e3a8a60;
+        margin-bottom: 8px;
+        display: block;
+    }
+
+    .field-input-box {
+        background: white;
+        border: 1px solid #e2e8f0;
+        border-radius: 1rem;
+        padding: 0.75rem 1rem;
+        width: 100%;
+        transition: all 0.2s;
+        font-weight: 700;
+        color: #1e3a8a;
+    }
+
+    .field-input-box:focus {
+        border-color: #3b82f6;
+        box-shadow: 0 0 0 4px #dbeafe;
+        outline: none;
+    }
+
+    select.field-input-box {
+        appearance: none;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%23475569'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
+        background-repeat: no-repeat;
+        background-position: right 1rem center;
+        background-size: 1.25rem;
+        padding-right: 2.5rem;
+    }
+
+    .btn-premium {
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+    }
+
+    .btn-premium:hover {
+        transform: translateY(-2px);
+    }
+
+    .activity-timeline-item::before {
+        content: '';
+        position: absolute;
+        left: 20px;
+        top: 40px;
+        bottom: -20px;
+        width: 2px;
+        background: rgba(30, 58, 138, 0.05);
+    }
+
+    .activity-timeline-item:last-child::before { display: none; }
+</style>
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet" />
+{% endblock %}
+
+{% block content %}
+<div class="min-h-screen py-8 px-4 sm:px-6 lg:px-12">
+    <!-- Top Bar -->
+    <div class="max-w-7xl mx-auto mb-10 flex items-center justify-between">
+        <a href="{% if request.user.userprofile.role == 'admin' %}{% url 'adashboard' %}{% elif request.user.userprofile.role == 'manager' %}{% url 'mdashboard' %}{% elif request.user.userprofile.role == 'superadmin' %}{% url 'superadmin_dashboard' %}{% else %}{% url 'dashboard' %}{% endif %}" 
+           class="inline-flex items-center text-sm font-bold text-blue-600 hover:text-blue-800 transition-all group">
+            <div class="w-10 h-10 rounded-2xl bg-white shadow-sm flex items-center justify-center mr-3 group-hover:-translate-x-1 transition-transform border border-blue-50">
+                <i class="fa-solid fa-arrow-left text-xs"></i>
+            </div>
+            Back to Feed
+        </a>
+
+        <div class="flex items-center gap-4 bg-white/40 backdrop-blur-md px-4 py-2 rounded-2xl border border-white/60">
+            <div class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>
+            <span class="text-[10px] font-black text-blue-900 uppercase tracking-widest">Active Lead Session</span>
+        </div>
+    </div>
+
+    <div class="max-w-7xl mx-auto">
+        <!-- Main Form -->
+        <form method="post" enctype="multipart/form-data">
+            {% csrf_token %}
+
+            <!-- Hero Section Match -->
+            <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-10">
+                <div>
+                    <h1 class="text-6xl font-black text-blue-900 leading-tight tracking-tighter">{{ lead.id }}</h1>
+                    <p class="text-blue-600/40 font-black text-xl uppercase tracking-widest">Ticket #{{ ticket.ticket_id|default:lead.id }}</p>
+                </div>
+                
+                <div class="flex flex-wrap gap-4 mt-8 md:mt-0">
+                    <button type="submit" class="btn-premium bg-blue-600 hover:bg-blue-700 text-white px-8 py-3.5 rounded-2xl text-xs flex items-center gap-3 shadow-xl shadow-blue-600/20">
+                        <i class="fa-solid fa-floppy-disk"></i> Save Changes
+                    </button>
+                    <button type="button" onclick="document.getElementById('id_assigned_to').focus()" class="btn-premium bg-indigo-600 hover:bg-indigo-700 text-white px-8 py-3.5 rounded-2xl text-xs flex items-center gap-3 shadow-xl shadow-indigo-600/20">
+                        <i class="fa-solid fa-user-gear"></i> Reassign
+                    </button>
+                    <button type="button" onclick="if(confirm('Are you sure you want to delete this lead?')) document.getElementById('delete-form').submit();" class="btn-premium bg-rose-600 hover:bg-rose-700 text-white px-8 py-3.5 rounded-2xl text-xs flex items-center gap-3 shadow-xl shadow-rose-600/20">
+                        <i class="fa-solid fa-trash-can"></i> Delete
+                    </button>
+                </div>
+            </div>
+
+            <!-- 4-Column Header Stats Grid -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                <!-- Priority -->
+                <div class="glass-card p-6 rounded-[2rem] relative overflow-hidden group">
+                    <div class="absolute top-0 right-0 w-16 h-16 bg-amber-500/5 rounded-full -mr-8 -mt-8"></div>
+                    <span class="info-label">Current Priority</span>
+                    <select name="priority" class="field-input-box !border-blue-50 !bg-blue-50/30 !text-sm">
+                        <option value="low" {% if ticket.priority == 'low' %}selected{% endif %}>LOW PRIORITY</option>
+                        <option value="mid" {% if ticket.priority == 'mid' %}selected{% endif %}>MID PRIORITY</option>
+                        <option value="high" {% if ticket.priority == 'high' %}selected{% endif %}>HIGH PRIORITY</option>
+                        <option value="critical" {% if ticket.priority == 'critical' %}selected{% endif %}>CRITICAL</option>
+                    </select>
+                </div>
+
+                <!-- Status -->
+                <div class="glass-card p-6 rounded-[2rem] relative overflow-hidden group">
+                    <div class="absolute top-0 right-0 w-16 h-16 bg-blue-500/5 rounded-full -mr-8 -mt-8"></div>
+                    <span class="info-label">Lifecycle Status</span>
+                    <select name="status" class="field-input-box !border-blue-50 !bg-blue-50/30 !text-sm">
+                        {% for val, name in lead.STATUS_CHOICES %}
+                            <option value="{{ val }}" {% if lead.status == val %}selected{% endif %}>{{ name|upper }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <!-- Assigned To -->
+                <div class="glass-card p-6 rounded-[2rem]">
+                    <span class="info-label">Assigned Agent</span>
+                    <select name="assigned_to" id="id_assigned_to" class="field-input-box !border-blue-50 !bg-blue-50/30 !text-sm">
+                        <option value="">Unassigned</option>
+                        {% for choice_val, choice_label in form.fields.assigned_to.choices %}
+                            {% if choice_val %}
+                                <option value="{{ choice_val }}" {% if lead.assigned_to.id|stringformat:"s" == choice_val|stringformat:"s" %}selected{% endif %}>{{ choice_label }}</option>
+                            {% endif %}
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <!-- Department -->
+                <div class="glass-card p-6 rounded-[2rem]">
+                    <span class="info-label">Domain/Department</span>
+                    <input type="text" name="department" value="{{ ticket.department|default:'Support' }}" 
+                           class="field-input-box !border-blue-50 !bg-blue-50/30 !text-sm" placeholder="e.g. Developer">
+                </div>
+            </div>
+
+            <!-- Description Box -->
+            <div class="mb-8">
+                <div class="glass-card rounded-[2.5rem] p-10">
+                    <h3 class="text-xl font-black text-blue-900 mb-6 flex items-center gap-3">
+                        <div class="w-8 h-8 rounded-xl bg-blue-50 flex items-center justify-center text-blue-600 text-xs">
+                            <i class="fa-solid fa-align-left"></i>
+                        </div>
+                        Inquiry Description
+                    </h3>
+                    <textarea name="notes" class="w-full bg-blue-50/30 border border-blue-100 rounded-3xl p-8 text-blue-900/70 font-semibold leading-relaxed min-h-[160px] focus:ring-4 focus:ring-blue-100 outline-none transition-all"
+                              placeholder="Describe the lead requirements...">{{ lead.notes|default:lead.product_description }}</textarea>
+                </div>
+            </div>
+
+            <!-- Meta Data Grid -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
+                <div class="glass-card p-6 rounded-[2rem]">
+                    <span class="info-label">Active Project</span>
+                    <input type="text" name="project" value="{{ ticket.project|default:lead.product_name }}" 
+                           class="field-input-box !border-blue-50 !bg-blue-50/30 !text-sm">
+                </div>
+                <div class="glass-card p-6 rounded-[2rem] flex flex-col justify-center">
+                    <span class="info-label">First Contact</span>
+                    <p class="text-blue-900 font-black text-sm">{{ lead.created_at|date:"M d, Y" }} <span class="text-blue-300 ml-2 font-bold">{{ lead.created_at|date:"h:i A" }}</span></p>
+                </div>
+                <div class="glass-card p-6 rounded-[2rem] flex flex-col justify-center">
+                    <span class="info-label">Last Interaction</span>
+                    <p class="text-blue-900 font-black text-sm">{{ lead.updated_at|date:"M d, Y" }} <span class="text-blue-300 ml-2 font-bold">{{ lead.updated_at|date:"h:i A" }}</span></p>
+                </div>
+            </div>
+
+            <!-- Attachments -->
+            <div class="glass-card rounded-[2.5rem] p-10">
+                <h3 class="text-xl font-black text-blue-900 mb-8 flex items-center gap-3">
+                    <div class="w-8 h-8 rounded-xl bg-slate-50 flex items-center justify-center text-slate-400 text-xs">
+                        <i class="fa-solid fa-paperclip"></i>
+                    </div>
+                    Proof & Attachments
+                </h3>
+                
+                <div class="flex flex-col sm:flex-row items-center gap-6">
+                    <div class="flex-1 w-full bg-slate-50/50 border-2 border-dashed border-slate-200 rounded-[2rem] p-8 text-center group hover:border-blue-400 transition-all cursor-pointer relative">
+                        <input type="file" name="attachment" class="absolute inset-0 opacity-0 cursor-pointer z-10">
+                        <i class="fa-solid fa-cloud-arrow-up text-slate-300 text-3xl mb-3 group-hover:text-blue-500 transition-colors"></i>
+                        <p class="text-xs font-black text-slate-400 uppercase tracking-widest">Click or drag files here</p>
+                    </div>
+                    <button type="submit" class="btn-premium bg-slate-900 text-white px-10 py-5 rounded-[2rem] text-xs shadow-xl shadow-slate-900/20">
+                        Process Upload
+                    </button>
+                </div>
+
+                {% if ticket.attachment %}
+                <div class="mt-8 flex items-center gap-4 p-5 bg-white border border-blue-50 rounded-3xl w-fit shadow-sm">
+                    <div class="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center text-blue-600">
+                        <i class="fa-solid fa-file-invoice"></i>
+                    </div>
+                    <div>
+                        <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Active File</p>
+                        <a href="{{ ticket.attachment.url }}" class="text-xs font-bold text-blue-600 hover:underline">{{ ticket.attachment.name }}</a>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </form>
+
+        <!-- Timeline Section -->
+        <div class="mt-20">
+            <h3 class="text-2xl font-black text-blue-900 mb-12 flex items-center gap-4">
+                <span class="w-1.5 h-8 bg-blue-600 rounded-full"></span>
+                Digital Footprint Timeline
+            </h3>
+            
+            <div class="space-y-12">
+                {% for activity in activities %}
+                <div class="activity-timeline-item relative pl-16">
+                    <div class="absolute left-0 top-0 w-10 h-10 rounded-2xl bg-white border-2 border-blue-50 shadow-sm flex items-center justify-center text-blue-600 z-10 transition-transform hover:scale-110">
+                        <i class="fa-solid fa-bolt-lightning text-xs"></i>
+                    </div>
+                    
+                    <div class="bg-white/40 backdrop-blur-md p-6 rounded-[2rem] border border-white group hover:bg-white/60 transition-all">
+                        <div class="flex items-center justify-between mb-2">
+                            <h4 class="text-sm font-black text-blue-900 group-hover:text-blue-700 transition-colors">{{ activity.action }}</h4>
+                            <span class="text-[10px] font-black text-blue-300 uppercase tracking-widest">{{ activity.timestamp|date:"M d, H:i" }}</span>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <div class="w-5 h-5 rounded-full bg-blue-100 flex items-center justify-center text-[8px] font-black text-blue-600">
+                                {{ activity.user.username|make_list|first|upper|default:"S" }}
+                            </div>
+                            <span class="text-[10px] font-bold text-slate-400 uppercase tracking-tight">Handled by {{ activity.user.username|default:"Auto Engine" }}</span>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Hidden delete form -->
+<form id="delete-form" method="post" action="{% url 'delete_lead' lead.id %}" class="hidden">
+    {% csrf_token %}
+</form>
+
+{% endblock %}
