@@ -87,7 +87,7 @@
 <div class="min-h-screen py-8 px-4 sm:px-6 lg:px-12">
     <!-- Top Bar -->
     <div class="max-w-7xl mx-auto mb-10 flex items-center justify-between">
-        <a href="{% url 'dashboard' %}" 
+        <a href="{% if request.user.userprofile.role == 'admin' %}{% url 'adashboard' %}{% elif request.user.userprofile.role == 'manager' %}{% url 'mdashboard' %}{% elif request.user.userprofile.role == 'superadmin' %}{% url 'superadmin_dashboard' %}{% else %}{% url 'dashboard' %}{% endif %}" 
            class="inline-flex items-center text-sm font-bold text-blue-600 hover:text-blue-800 transition-all group">
             <div class="w-10 h-10 rounded-2xl bg-white shadow-sm flex items-center justify-center mr-3 group-hover:-translate-x-1 transition-transform border border-blue-50">
                 <i class="fa-solid fa-arrow-left text-xs"></i>

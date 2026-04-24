@@ -15,16 +15,22 @@
 
     <!-- Back Button -->
     <div class="mb-6 flex justify-between items-center">
-        <a href="javascript:history.back()" class="inline-flex items-center text-sm font-semibold text-gray-500 hover:text-blue-600 transition-colors">
+        <a href="{% url dashboard_url %}" class="inline-flex items-center text-sm font-semibold text-gray-500 hover:text-blue-600 transition-colors">
             <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
             Back to Dashboard
         </a>
         <div class="flex gap-3">
-            <button class="px-4 py-2 border border-gray-200 text-gray-700 bg-white rounded-lg hover:bg-gray-50 text-sm font-medium transition cursor-not-allowed opacity-60" title="Future Feature">Edit Ticket</button>
+            {% if user == ticket.assigned_to or user.userprofile.role == 'admin' %}
+            <a href="{% url 'edit_ticket' ticket.id %}" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm font-medium transition shadow-md shadow-blue-600/20">Edit Ticket / Reassign</a>
             <form action="{% url 'delete_ticket' ticket.id %}" method="POST" class="inline" onsubmit="return confirm('Are you sure you want to delete this ticket?');">
                 {% csrf_token %}
                 <button type="submit" class="px-4 py-2 bg-red-50 text-red-600 hover:bg-red-100 rounded-lg text-sm font-medium transition">Delete</button>
             </form>
+            {% else %}
+            <span class="px-4 py-2 bg-gray-100 text-gray-500 rounded-lg text-xs font-bold uppercase tracking-wider flex items-center gap-2">
+                <i class="fa-solid fa-lock text-[10px]"></i> Read Only Access
+            </span>
+            {% endif %}
         </div>
     </div>
 

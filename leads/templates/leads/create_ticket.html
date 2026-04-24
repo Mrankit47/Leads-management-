@@ -21,7 +21,7 @@
 
     <!-- Navigation -->
     <div class="max-w-3xl mx-auto mb-8">
-        <a href="{% if user.userprofile.role == 'admin' %}{% url 'company_admin_dashboard' %}{% elif user.userprofile.role == 'manager' %}{% url 'manager_dashboard' %}{% elif user.userprofile.role == 'editor' or user.userprofile.role == 'employee' or user.userprofile.role == 'hybrid' %}{% url 'employee_dashboard' %}{% else %}{% url 'dashboard' %}{% endif %}" 
+        <a href="{% url dashboard_url %}" 
            class="inline-flex items-center text-sm font-bold text-blue-600 hover:text-blue-800 transition-all group">
             <div class="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center mr-3 group-hover:-translate-x-1 transition-transform">
                 <i class="fa-solid fa-arrow-left text-xs"></i>
@@ -124,7 +124,7 @@
                     <i class="fa-solid fa-paper-plane"></i>
                     Initialize Support Ticket
                 </button>
-                <a href="{% if user.userprofile.role == 'admin' %}{% url 'company_admin_dashboard' %}{% elif user.userprofile.role == 'manager' %}{% url 'manager_dashboard' %}{% elif user.userprofile.role == 'editor' or user.userprofile.role == 'employee' or user.userprofile.role == 'hybrid' %}{% url 'employee_dashboard' %}{% else %}{% url 'dashboard' %}{% endif %}" 
+                <a href="{% url dashboard_url %}" 
                    class="flex-1 bg-white hover:bg-gray-50 text-gray-500 font-bold py-4 rounded-2xl text-center border border-gray-200 transition-all shadow-sm">
                     Discard
                 </a>

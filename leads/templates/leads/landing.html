@@ -17,6 +17,10 @@
         backdrop-filter: blur(10px);
         border: 1px solid rgba(255, 255, 255, 0.2);
       }
+      .dark .glass-card {
+        background: rgba(15, 23, 42, 0.85); /* dark: slate-900 with opacity */
+        border-color: rgba(255, 255, 255, 0.05); /* very subtle border */
+      }
       .reveal {
         opacity: 0;
         transform: translateY(30px);
@@ -167,6 +171,7 @@
     </style>
     <script>
       tailwind.config = {
+        darkMode: 'class',
         theme: {
           extend: {
             colors: {
@@ -193,9 +198,27 @@
         },
       };
     </script>
+    <script>
+      // Apply theme before render to prevent flash of wrong theme
+      if (localStorage.getItem('theme') === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+        document.documentElement.classList.add('dark');
+      } else {
+        document.documentElement.classList.remove('dark');
+      }
+
+      function toggleTheme() {
+        if (document.documentElement.classList.contains('dark')) {
+          document.documentElement.classList.remove('dark');
+          localStorage.setItem('theme', 'light');
+        } else {
+          document.documentElement.classList.add('dark');
+          localStorage.setItem('theme', 'dark');
+        }
+      }
+    </script>
   </head>
   <body
-    class="font-sans text-gray-800 bg-gray-50 antialiased selection:bg-blue-200 selection:text-blue-900"
+    class="font-sans text-gray-800 dark:text-gray-200 bg-gray-50 dark:bg-dark antialiased selection:bg-blue-200 selection:text-blue-900 transition-colors duration-300"
   >
     <!-- Navbar -->
     <nav
@@ -213,7 +236,7 @@
             >
               <i class="fa-solid fa-chart-line"></i>
             </div>
-            <span class="font-bold text-xl text-dark tracking-tight"
+            <span class="font-bold text-xl text-dark dark:text-white tracking-tight"
               >LeadSystem</span
             >
           </div>
@@ -221,24 +244,33 @@
           <div class="hidden md:flex space-x-8 items-center">
             <a
               href="#problem"
-              class="text-gray-600 hover:text-primary font-medium transition duration-200"
-              >The Challenge</a
-            >
+              class="relative group text-gray-600 dark:text-gray-300 hover:text-primary dark:hover:text-secondary font-medium transition duration-200"
+              >The Challenge
+              <span class="absolute left-0 -bottom-1 w-0 h-[2px] bg-primary dark:bg-secondary transition-all duration-300 group-hover:w-full"></span>
+            </a>
             <a
               href="#solution"
-              class="text-gray-600 hover:text-primary font-medium transition duration-200"
-              >Solution</a
-            >
+              class="relative group text-gray-600 dark:text-gray-300 hover:text-primary dark:hover:text-secondary font-medium transition duration-200"
+              >Solution
+              <span class="absolute left-0 -bottom-1 w-0 h-[2px] bg-primary dark:bg-secondary transition-all duration-300 group-hover:w-full"></span>
+            </a>
             <a
               href="#features"
-              class="text-gray-600 hover:text-primary font-medium transition duration-200"
-              >Features</a
-            >
+              class="relative group text-gray-600 dark:text-gray-300 hover:text-primary dark:hover:text-secondary font-medium transition duration-200"
+              >Features
+              <span class="absolute left-0 -bottom-1 w-0 h-[2px] bg-primary dark:bg-secondary transition-all duration-300 group-hover:w-full"></span>
+            </a>
             <a
               href="#architecture"
-              class="text-gray-600 hover:text-primary font-medium transition duration-200"
-              >Architecture</a
-            >
+              class="relative group text-gray-600 dark:text-gray-300 hover:text-primary dark:hover:text-secondary font-medium transition duration-200"
+              >Architecture
+              <span class="absolute left-0 -bottom-1 w-0 h-[2px] bg-primary dark:bg-secondary transition-all duration-300 group-hover:w-full"></span>
+            </a>
+            <!-- Theme Toggle -->
+            <button onclick="toggleTheme()" class="w-10 h-10 rounded-full bg-gray-100 dark:bg-slate-800 flex items-center justify-center hover:bg-gray-200 dark:hover:bg-slate-700 transition shadow-inner border border-gray-200 dark:border-slate-700 focus:outline-none" aria-label="Toggle Dark Mode">
+                <i class="fa-solid fa-moon text-slate-600 dark:hidden"></i>
+                <i class="fa-solid fa-sun text-yellow-400 hidden dark:block"></i>
+            </button>
           </div>
           <!-- Mobile Menu Button -->
           <div class="md:hidden flex items-center">
@@ -269,51 +301,60 @@
           >
           <a
             href="#features"
-            class="block px-3 py-3 rounded-md text-base font-medium text-gray-700 hover:text-primary hover:bg-gray-50"
+            class="block px-3 py-3 rounded-md text-base font-medium text-gray-700 dark:text-gray-300 hover:text-primary dark:hover:text-secondary hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors"
             >Features</a
           >
+          <div class="px-3 py-2 border-t border-gray-100 dark:border-slate-800 mt-2 pt-4">
+              <button onclick="toggleTheme()" class="w-full py-3 rounded-lg bg-gray-100 dark:bg-slate-800 text-gray-700 dark:text-gray-300 font-medium flex items-center justify-center gap-2 hover:bg-gray-200 dark:hover:bg-slate-700 transition">
+                <i class="fa-solid fa-circle-half-stroke"></i> Toggle Theme
+              </button>
+          </div>
         </div>
       </div>
     </nav>
 
     <!-- Hero Section -->
     <section
-      class="relative pt-32 pb-20 lg:pt-48 lg:pb-32 overflow-hidden bg-gradient-to-br from-white via-accent to-blue-100"
+      class="relative pt-32 pb-20 lg:pt-48 lg:pb-32 overflow-hidden bg-gradient-to-br from-white via-accent to-blue-100 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900 transition-colors duration-300"
+      id="hero-section"
     >
+      <!-- Interactive Particle Canvas -->
+      <canvas id="hero-canvas" class="absolute inset-0 z-0 opacity-40"></canvas>
+
       <!-- Abstract background shapes -->
       <div
-        class="absolute top-0 right-0 -mr-20 -mt-20 w-96 h-96 rounded-full bg-blue-200 mix-blend-multiply filter blur-3xl opacity-50 animate-blob"
+        class="absolute top-0 right-0 -mr-20 -mt-20 w-96 h-96 rounded-full bg-blue-200 dark:bg-blue-900/40 mix-blend-multiply filter blur-3xl opacity-50 animate-blob pointer-events-none transition-colors duration-300"
       ></div>
       <div
-        class="absolute bottom-0 left-0 -ml-20 -mb-20 w-72 h-72 rounded-full bg-indigo-200 mix-blend-multiply filter blur-3xl opacity-50 animate-blob animation-delay-2000"
+        class="absolute bottom-0 left-0 -ml-20 -mb-20 w-72 h-72 rounded-full bg-indigo-200 dark:bg-indigo-900/40 mix-blend-multiply filter blur-3xl opacity-50 animate-blob animation-delay-2000 pointer-events-none transition-colors duration-300"
       ></div>
 
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
         <div class="text-center max-w-4xl mx-auto">
           <span
-            class="inline-block py-1 px-3 rounded-full bg-blue-100 text-primary text-sm font-semibold tracking-wider mb-6 animate-fade-in-up"
+            class="inline-block py-1 px-3 rounded-full bg-blue-100 text-primary dark:bg-blue-900/50 dark:text-blue-300 text-sm font-semibold tracking-wider mb-6 animate-fade-in-up transition-colors duration-300"
             style="animation-delay: 0.1s"
             >POWERFUL CRM PLATFORM</span
           >
 
           <h1
-            class="text-5xl md:text-6xl lg:text-7xl font-extrabold text-dark tracking-tight mb-8 leading-tight animate-fade-in-up"
+            class="text-5xl md:text-6xl lg:text-7xl font-extrabold text-dark dark:text-white tracking-tight mb-8 leading-tight animate-fade-in-up transition-colors duration-300"
             style="animation-delay: 0.2s"
           >
-            Capture, Track and
+            <span id="capture-trigger" class="cursor-pointer hover:text-primary transition-colors inline-block select-none">Capture</span>, Track and
             <span
-              class="text-transparent bg-clip-text bg-gradient-to-r from-primary to-secondary"
+              class="text-transparent bg-clip-text bg-gradient-to-r from-primary to-secondary dark:from-blue-400 dark:to-blue-200"
               >Convert Every Lead</span
             >
           </h1>
 
           <p
-            class="mt-4 text-lg md:text-xl text-gray-600 mb-10 max-w-3xl mx-auto leading-relaxed animate-fade-in-up"
+            class="mt-4 text-lg md:text-xl text-gray-600 dark:text-gray-300 mb-10 max-w-3xl mx-auto leading-relaxed animate-fade-in-up transition-colors duration-300"
             style="animation-delay: 0.4s"
           >
             Businesses receive leads from multiple platforms like WhatsApp,
             website forms, social media, phone calls and emails.
-            <strong class="text-gray-800"
+            <strong class="text-gray-800 dark:text-white"
               >Manage them all in one centralized platform.</strong
             >
           </p>
@@ -330,7 +371,7 @@
             </a>
             <a
               href="{% url 'login' %}"
-              class="w-full sm:w-auto px-8 py-4 border-2 border-gray-200 text-lg font-medium rounded-xl text-gray-700 bg-white hover:border-primary hover:text-primary transition-all duration-300"
+              class="w-full sm:w-auto px-8 py-4 border-2 border-gray-200 dark:border-slate-700 text-lg font-medium rounded-xl text-gray-700 dark:text-gray-200 bg-white dark:bg-slate-800 hover:border-primary dark:hover:border-secondary transition-all duration-300"
             >
               Login
             </a>
@@ -340,10 +381,13 @@
                 document.getElementById('chatbot-fab').click();
                 return false;
               "
-              class="text-gray-500 hover:text-secondary font-medium ml-2 flex items-center transition-colors"
+              class="group relative text-gray-500 dark:text-gray-400 hover:text-secondary dark:hover:text-blue-300 font-medium ml-2 flex items-center gap-2 px-4 py-2 rounded-xl hover:bg-blue-50 dark:hover:bg-slate-800 transition-all duration-300"
             >
-              <i class="fa-regular fa-comment-dots mr-2 text-xl"></i> Chat with
-              Bot
+              <div class="relative w-6 h-6 flex items-center justify-center">
+                <i class="fa-regular fa-comment-dots absolute transition-all duration-300 transform group-hover:-translate-y-4 group-hover:scale-0 group-hover:opacity-0 text-xl"></i>
+                <i class="fa-solid fa-robot absolute transition-all duration-300 transform translate-y-4 scale-0 opacity-0 group-hover:translate-y-0 group-hover:scale-110 group-hover:opacity-100 text-xl text-primary dark:text-blue-400 drop-shadow-md"></i>
+              </div>
+              <span class="whitespace-nowrap transition-transform duration-300 group-hover:translate-x-1">Chat with Bot</span>
             </a>
           </div>
         </div>
@@ -354,14 +398,14 @@
           style="animation-delay: 0.8s"
         >
           <div
-            class="absolute inset-0 bg-gradient-to-t from-gray-50 to-transparent z-10 h-32 bottom-0 w-full top-auto"
+            class="absolute inset-0 bg-gradient-to-t from-gray-50 dark:from-dark to-transparent z-10 h-32 bottom-0 w-full top-auto transition-colors duration-300"
           ></div>
           <div
-            class="bg-white rounded-2xl shadow-2xl overflow-hidden border border-gray-100 transform rotate-1 hover:rotate-0 transition duration-500 mx-auto max-w-5xl"
+            class="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl dark:shadow-blue-900/20 overflow-hidden border border-gray-100 dark:border-slate-700 mx-auto max-w-5xl transition-colors duration-300"
           >
             <!-- Browser Chrome -->
             <div
-              class="bg-gray-100 flex items-center px-4 py-3 border-b border-gray-200"
+              class="bg-gray-100 dark:bg-slate-900 flex items-center px-4 py-3 border-b border-gray-200 dark:border-slate-700 transition-colors duration-300"
             >
               <div class="flex space-x-2">
                 <div class="w-3 h-3 rounded-full bg-red-400"></div>
@@ -370,20 +414,20 @@
               </div>
             </div>
             <!-- Fake Dashboard Content -->
-            <div class="p-4 md:p-8 bg-gray-50 grid grid-cols-4 gap-4 md:gap-6">
+            <div class="p-4 md:p-8 bg-gray-50 dark:bg-slate-800 grid grid-cols-4 gap-4 md:gap-6 transition-colors duration-300">
               <div class="col-span-1 hidden md:block space-y-6 pt-2">
                 <div class="space-y-3">
-                  <div class="text-[10px] font-bold text-gray-400 uppercase tracking-widest pl-1">Menu</div>
-                  <div class="flex items-center gap-2 px-3 py-2 bg-blue-100 text-primary rounded-lg text-xs font-bold">
+                  <div class="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest pl-1">Menu</div>
+                  <div class="flex items-center gap-2 px-3 py-2 bg-blue-100 dark:bg-blue-900/30 text-primary dark:text-blue-400 rounded-lg text-xs font-bold transition-colors">
                     <i class="fa-solid fa-house"></i> Dashboard
                   </div>
-                  <div class="flex items-center gap-2 px-3 py-2 text-gray-500 rounded-lg text-xs font-bold hover:bg-gray-100 transition">
+                  <div class="flex items-center gap-2 px-3 py-2 text-gray-500 dark:text-gray-400 rounded-lg text-xs font-bold hover:bg-gray-100 dark:hover:bg-slate-700 transition">
                     <i class="fa-solid fa-users"></i> Leads List
                   </div>
-                  <div class="flex items-center gap-2 px-3 py-2 text-gray-500 rounded-lg text-xs font-bold hover:bg-gray-100 transition">
+                  <div class="flex items-center gap-2 px-3 py-2 text-gray-500 dark:text-gray-400 rounded-lg text-xs font-bold hover:bg-gray-100 dark:hover:bg-slate-700 transition">
                     <i class="fa-solid fa-ticket"></i> Tickets
                   </div>
-                  <div class="flex items-center gap-2 px-3 py-2 text-gray-500 rounded-lg text-xs font-bold hover:bg-gray-100 transition">
+                  <div class="flex items-center gap-2 px-3 py-2 text-gray-500 dark:text-gray-400 rounded-lg text-xs font-bold hover:bg-gray-100 dark:hover:bg-slate-700 transition">
                     <i class="fa-solid fa-gear"></i> Settings
                   </div>
                 </div>
@@ -391,52 +435,52 @@
               <div class="col-span-4 md:col-span-3 space-y-4 md:space-y-6">
                 <!-- Mini Stats -->
                 <div class="grid grid-cols-3 gap-3 md:gap-4">
-                  <div class="bg-blue-600 rounded-xl p-3 md:p-4 text-white shadow-lg shadow-blue-200">
+                  <div class="bg-blue-600 rounded-xl p-3 md:p-4 text-white shadow-lg shadow-blue-200 dark:shadow-none">
                     <div class="text-[10px] uppercase font-bold opacity-80 mb-1">Total Leads</div>
                     <div class="text-xl md:text-2xl font-bold">1,284</div>
                     <div class="text-[10px] mt-1 text-blue-100">+12% from last week</div>
                   </div>
-                  <div class="bg-white rounded-xl p-3 md:p-4 shadow-sm border border-gray-100">
-                    <div class="text-[10px] uppercase font-bold text-gray-400 mb-1">Conversion</div>
-                    <div class="text-xl md:text-2xl font-bold text-dark">24.8%</div>
-                    <div class="text-[10px] mt-1 text-green-500">Good performance</div>
+                  <div class="bg-white dark:bg-slate-700 rounded-xl p-3 md:p-4 shadow-sm border border-gray-100 dark:border-slate-600 transition-colors">
+                    <div class="text-[10px] uppercase font-bold text-gray-400 dark:text-gray-400 mb-1">Conversion</div>
+                    <div class="text-xl md:text-2xl font-bold text-dark dark:text-white">24.8%</div>
+                    <div class="text-[10px] mt-1 text-green-500 dark:text-green-400">Good performance</div>
                   </div>
-                  <div class="bg-white rounded-xl p-3 md:p-4 shadow-sm border border-gray-100">
-                    <div class="text-[10px] uppercase font-bold text-gray-400 mb-1">Tickets</div>
-                    <div class="text-xl md:text-2xl font-bold text-dark">42</div>
-                    <div class="text-[10px] mt-1 text-orange-500">12 Pending</div>
+                  <div class="bg-white dark:bg-slate-700 rounded-xl p-3 md:p-4 shadow-sm border border-gray-100 dark:border-slate-600 transition-colors">
+                    <div class="text-[10px] uppercase font-bold text-gray-400 dark:text-gray-400 mb-1">Tickets</div>
+                    <div class="text-xl md:text-2xl font-bold text-dark dark:text-white">42</div>
+                    <div class="text-[10px] mt-1 text-orange-500 dark:text-orange-400">12 Pending</div>
                   </div>
                 </div>
                 <!-- Mini Table -->
-                <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-                  <div class="px-4 py-3 border-b border-gray-50 bg-gray-50/50 flex justify-between items-center">
-                    <span class="text-xs font-bold text-gray-700">Recent Inquiries</span>
-                    <span class="text-[10px] text-primary font-bold">View All</span>
+                <div class="bg-white dark:bg-slate-700 rounded-xl shadow-sm border border-gray-100 dark:border-slate-600 overflow-hidden transition-colors">
+                  <div class="px-4 py-3 border-b border-gray-50 dark:border-slate-600 bg-gray-50/50 dark:bg-slate-800/50 flex justify-between items-center transition-colors">
+                    <span class="text-xs font-bold text-gray-700 dark:text-gray-200">Recent Inquiries</span>
+                    <span class="text-[10px] text-primary dark:text-blue-400 font-bold">View All</span>
                   </div>
                   <div class="p-0 overflow-x-auto">
-                    <table class="w-full text-[11px] md:text-xs text-left">
+                    <table class="w-full text-[11px] md:text-xs text-left dark:text-gray-300">
                       <thead>
-                        <tr class="text-gray-400 border-b border-gray-50">
+                        <tr class="text-gray-400 dark:text-gray-500 border-b border-gray-50 dark:border-slate-600 transition-colors">
                           <th class="px-4 py-2 font-bold uppercase tracking-wider">Customer</th>
                           <th class="px-4 py-2 font-bold uppercase tracking-wider">Source</th>
                           <th class="px-4 py-2 font-bold uppercase tracking-wider">Status</th>
                         </tr>
                       </thead>
                       <tbody>
-                        <tr class="border-b border-gray-50 hover:bg-gray-50 transition">
-                          <td class="px-4 py-2 font-medium">Rahul Sharma</td>
-                          <td class="px-4 py-2"><span class="px-2 py-0.5 rounded-full bg-blue-50 text-blue-600">Web Form</span></td>
-                          <td class="px-4 py-2"><span class="px-2 py-0.5 rounded-full bg-yellow-100 text-yellow-700">Inquiry</span></td>
+                        <tr class="border-b border-gray-50 dark:border-slate-600 hover:bg-gray-50 dark:hover:bg-slate-600 transition-colors">
+                          <td class="px-4 py-2 font-medium dark:text-gray-100">Rahul Sharma</td>
+                          <td class="px-4 py-2"><span class="px-2 py-0.5 rounded-full bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-300 transition-colors">Web Form</span></td>
+                          <td class="px-4 py-2"><span class="px-2 py-0.5 rounded-full bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400 transition-colors">Inquiry</span></td>
                         </tr>
-                        <tr class="border-b border-gray-50 hover:bg-gray-50 transition">
-                          <td class="px-4 py-2 font-medium">Amit Patel</td>
-                          <td class="px-4 py-2"><span class="px-2 py-0.5 rounded-full bg-green-50 text-green-600">Chatbot</span></td>
-                          <td class="px-4 py-2"><span class="px-2 py-0.5 rounded-full bg-green-100 text-green-700">Closed</span></td>
+                        <tr class="border-b border-gray-50 dark:border-slate-600 hover:bg-gray-50 dark:hover:bg-slate-600 transition-colors">
+                          <td class="px-4 py-2 font-medium dark:text-gray-100">Amit Patel</td>
+                          <td class="px-4 py-2"><span class="px-2 py-0.5 rounded-full bg-green-50 dark:bg-green-900/30 text-green-600 dark:text-green-300 transition-colors">Chatbot</span></td>
+                          <td class="px-4 py-2"><span class="px-2 py-0.5 rounded-full bg-green-100 dark:bg-green-900/50 text-green-700 dark:text-green-300 transition-colors">Closed</span></td>
                         </tr>
-                        <tr class="hover:bg-gray-50 transition">
-                          <td class="px-4 py-2 font-medium">Priya Singh</td>
-                          <td class="px-4 py-2"><span class="px-2 py-0.5 rounded-full bg-purple-50 text-purple-600">Email</span></td>
-                          <td class="px-4 py-2"><span class="px-2 py-0.5 rounded-full bg-blue-100 text-blue-700">Proposal</span></td>
+                        <tr class="hover:bg-gray-50 dark:hover:bg-slate-600 transition-colors">
+                          <td class="px-4 py-2 font-medium dark:text-gray-100">Priya Singh</td>
+                          <td class="px-4 py-2"><span class="px-2 py-0.5 rounded-full bg-purple-50 dark:bg-purple-900/30 text-purple-600 dark:text-purple-300 transition-colors">Email</span></td>
+                          <td class="px-4 py-2"><span class="px-2 py-0.5 rounded-full bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300 transition-colors">Proposal</span></td>
                         </tr>
                       </tbody>
                     </table>
@@ -450,58 +494,58 @@
     </section>
 
     <!-- Problem Section -->
-    <section id="problem" class="py-24 bg-white">
+    <section id="problem" class="py-24 bg-white dark:bg-slate-900 transition-colors duration-300">
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="lg:grid lg:grid-cols-2 lg:gap-16 items-center">
           <div class="mb-12 lg:mb-0 reveal">
             <h2
-              class="text-primary font-bold tracking-wide uppercase text-sm mb-3"
+              class="text-primary dark:text-blue-400 font-bold tracking-wide uppercase text-sm mb-3"
             >
               The Problem
             </h2>
-            <h3 class="text-3xl md:text-4xl font-extrabold text-dark mb-6">
+            <h3 class="text-3xl md:text-4xl font-extrabold text-dark dark:text-white mb-6 transition-colors duration-300">
               The Challenge Businesses Face
             </h3>
-            <p class="text-lg text-gray-600 mb-6">
+            <p class="text-lg text-gray-600 dark:text-gray-400 mb-6 transition-colors duration-300">
               Today, businesses receive leads from countless fragmented
               channels:
             </p>
             <ul class="space-y-3 mb-8">
-              <li class="flex items-center text-gray-700">
+              <li class="flex items-center text-gray-700 dark:text-gray-300 transition-colors">
                 <div
-                  class="w-8 h-8 rounded-full bg-green-100 text-green-600 flex items-center justify-center mr-3"
+                  class="w-8 h-8 rounded-full bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400 flex items-center justify-center mr-3 transition-colors"
                 >
                   <i class="fa-brands fa-whatsapp"></i>
                 </div>
                 <span class="font-medium">WhatsApp messages</span>
               </li>
-              <li class="flex items-center text-gray-700">
+              <li class="flex items-center text-gray-700 dark:text-gray-300 transition-colors">
                 <div
-                  class="w-8 h-8 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center mr-3"
+                  class="w-8 h-8 rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 flex items-center justify-center mr-3 transition-colors"
                 >
                   <i class="fa-solid fa-share-nodes"></i>
                 </div>
                 <span class="font-medium">Social Media direct messages</span>
               </li>
-              <li class="flex items-center text-gray-700">
+              <li class="flex items-center text-gray-700 dark:text-gray-300 transition-colors">
                 <div
-                  class="w-8 h-8 rounded-full bg-purple-100 text-purple-600 flex items-center justify-center mr-3"
+                  class="w-8 h-8 rounded-full bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 flex items-center justify-center mr-3 transition-colors"
                 >
                   <i class="fa-solid fa-desktop"></i>
                 </div>
                 <span class="font-medium">Website contact forms</span>
               </li>
-              <li class="flex items-center text-gray-700">
+              <li class="flex items-center text-gray-700 dark:text-gray-300 transition-colors">
                 <div
-                  class="w-8 h-8 rounded-full bg-yellow-100 text-yellow-600 flex items-center justify-center mr-3"
+                  class="w-8 h-8 rounded-full bg-yellow-100 dark:bg-yellow-900/30 text-yellow-600 dark:text-yellow-400 flex items-center justify-center mr-3 transition-colors"
                 >
                   <i class="fa-solid fa-phone"></i>
                 </div>
                 <span class="font-medium">Direct phone calls</span>
               </li>
-              <li class="flex items-center text-gray-700">
+              <li class="flex items-center text-gray-700 dark:text-gray-300 transition-colors">
                 <div
-                  class="w-8 h-8 rounded-full bg-gray-100 text-gray-600 flex items-center justify-center mr-3"
+                  class="w-8 h-8 rounded-full bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 flex items-center justify-center mr-3 transition-colors"
                 >
                   <i class="fa-solid fa-envelope"></i>
                 </div>
@@ -512,70 +556,70 @@
 
           <div class="reveal delay-100">
             <div
-              class="bg-gray-50 rounded-2xl p-8 border border-gray-200 relative overflow-hidden"
+              class="bg-gray-50 dark:bg-slate-800 rounded-2xl p-8 border border-gray-200 dark:border-slate-700 relative overflow-hidden transition-colors duration-300"
             >
               <div class="absolute top-0 left-0 w-2 h-full bg-red-500"></div>
-              <h4 class="text-xl font-bold text-dark mb-4 drop-shadow-sm">
+              <h4 class="text-xl font-bold text-dark dark:text-white mb-4 drop-shadow-sm transition-colors">
                 Without a proper system, this leads to:
               </h4>
 
               <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8">
                 <div
-                  class="bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex items-start"
+                  class="bg-white dark:bg-slate-700 p-4 rounded-xl shadow-sm border border-gray-100 dark:border-slate-600 flex items-start transition-colors"
                 >
                   <i
                     class="fa-solid fa-clock-rotate-left text-red-500 mt-1 mr-3 text-lg"
                   ></i>
                   <div>
-                    <h5 class="font-bold text-gray-900 text-sm">
+                    <h5 class="font-bold text-gray-900 dark:text-gray-100 text-sm transition-colors">
                       Missed/Delayed Leads
                     </h5>
-                    <p class="text-xs text-gray-500 mt-1">
+                    <p class="text-xs text-gray-500 dark:text-gray-400 mt-1 transition-colors">
                       Slow response kills deals.
                     </p>
                   </div>
                 </div>
                 <div
-                  class="bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex items-start"
+                  class="bg-white dark:bg-slate-700 p-4 rounded-xl shadow-sm border border-gray-100 dark:border-slate-600 flex items-start transition-colors"
                 >
                   <i
                     class="fa-solid fa-shoe-prints text-red-500 mt-1 mr-3 text-lg"
                   ></i>
                   <div>
-                    <h5 class="font-bold text-gray-900 text-sm">
+                    <h5 class="font-bold text-gray-900 dark:text-gray-100 text-sm transition-colors">
                       No Follow-up Tracking
                     </h5>
-                    <p class="text-xs text-gray-500 mt-1">
+                    <p class="text-xs text-gray-500 dark:text-gray-400 mt-1 transition-colors">
                       Conversations get lost.
                     </p>
                   </div>
                 </div>
                 <div
-                  class="bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex items-start"
+                  class="bg-white dark:bg-slate-700 p-4 rounded-xl shadow-sm border border-gray-100 dark:border-slate-600 flex items-start transition-colors"
                 >
                   <i
                     class="fa-solid fa-eye-slash text-red-500 mt-1 mr-3 text-lg"
                   ></i>
                   <div>
-                    <h5 class="font-bold text-gray-900 text-sm">
+                    <h5 class="font-bold text-gray-900 dark:text-gray-100 text-sm transition-colors">
                       Poor Sales Visibility
                     </h5>
-                    <p class="text-xs text-gray-500 mt-1">
+                    <p class="text-xs text-gray-500 dark:text-gray-400 mt-1 transition-colors">
                       Managers fly blind.
                     </p>
                   </div>
                 </div>
                 <div
-                  class="bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex items-start"
+                  class="bg-white dark:bg-slate-700 p-4 rounded-xl shadow-sm border border-gray-100 dark:border-slate-600 flex items-start transition-colors"
                 >
                   <i
                     class="fa-solid fa-chart-line-down text-red-500 mt-1 mr-3 text-lg"
                   ></i>
                   <div>
-                    <h5 class="font-bold text-gray-900 text-sm">
+                    <h5 class="font-bold text-gray-900 dark:text-gray-100 text-sm transition-colors">
                       Lost Revenue
                     </h5>
-                    <p class="text-xs text-gray-500 mt-1">
+                    <p class="text-xs text-gray-500 dark:text-gray-400 mt-1 transition-colors">
                       Competitors win the client.
                     </p>
                   </div>
@@ -583,12 +627,12 @@
               </div>
 
               <div
-                class="bg-red-50 border border-red-100 p-5 rounded-xl text-center"
+                class="bg-red-50 dark:bg-red-900/20 border border-red-100 dark:border-red-900/50 p-5 rounded-xl text-center transition-colors"
               >
                 <i
                   class="fa-solid fa-triangle-exclamation text-red-500 text-2xl mb-2"
                 ></i>
-                <p class="text-red-800 font-medium italic">
+                <p class="text-red-800 dark:text-red-300 font-medium italic transition-colors">
                   "Up to 15–30% of potential revenue can be lost due to poor
                   lead management."
                 </p>
@@ -602,18 +646,18 @@
     <!-- Solution Section -->
     <section
       id="solution"
-      class="py-24 bg-primary text-white relative overflow-hidden"
+      class="py-24 bg-primary dark:bg-slate-900 text-white relative overflow-hidden transition-colors duration-300"
     >
       <div class="absolute inset-0 opacity-10 pattern-dots"></div>
       <div
-        class="absolute top-0 right-0 p-32 bg-blue-600 rounded-full mix-blend-screen filter blur-3xl opacity-50 transform translate-x-1/2 -translate-y-1/2"
+        class="absolute top-0 right-0 p-32 bg-blue-600 dark:bg-indigo-900 rounded-full mix-blend-screen filter blur-3xl opacity-50 transform translate-x-1/2 -translate-y-1/2 transition-colors duration-300"
       ></div>
 
       <div
         class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 text-center"
       >
         <h2
-          class="text-blue-200 font-bold tracking-wide uppercase text-sm mb-3"
+          class="text-blue-200 dark:text-blue-400 font-bold tracking-wide uppercase text-sm mb-3 transition-colors"
         >
           The Solution
         </h2>
@@ -622,7 +666,7 @@
         </h3>
 
         <p
-          class="text-xl text-blue-100 max-w-4xl mx-auto leading-relaxed font-light mb-16"
+          class="text-xl text-blue-100 dark:text-gray-300 max-w-4xl mx-auto leading-relaxed font-light mb-16 transition-colors"
         >
           A centralized system that captures, tracks and manages leads from
           multiple channels in
@@ -634,50 +678,50 @@
         <div class="grid grid-cols-2 md:grid-cols-4 gap-8 max-w-5xl mx-auto">
           <div class="text-center reveal">
             <div
-              class="w-16 h-16 mx-auto bg-white/10 rounded-full flex items-center justify-center mb-4 text-3xl"
+              class="w-16 h-16 mx-auto bg-white/10 dark:bg-white/5 rounded-full flex items-center justify-center mb-4 text-3xl transition-transform duration-300 hover:scale-125 cursor-default"
             >
-              <i class="fa-solid fa-bolt text-yellow-300"></i>
+              <i class="fa-solid fa-bolt text-yellow-300 dark:text-yellow-400"></i>
             </div>
-            <div class="font-bold text-lg">Respond Faster</div>
+            <div class="font-bold text-lg dark:text-gray-200">Respond Faster</div>
           </div>
           <div class="text-center reveal delay-100">
             <div
-              class="w-16 h-16 mx-auto bg-white/10 rounded-full flex items-center justify-center mb-4 text-3xl"
+              class="w-16 h-16 mx-auto bg-white/10 dark:bg-white/5 rounded-full flex items-center justify-center mb-4 text-3xl transition-transform duration-300 hover:scale-125 cursor-default"
             >
-              <i class="fa-solid fa-magnifying-glass-chart text-blue-300"></i>
+              <i class="fa-solid fa-chart-line text-blue-300 dark:text-blue-400"></i>
             </div>
-            <div class="font-bold text-lg">Track Interactions</div>
+            <div class="font-bold text-lg dark:text-gray-200">Track Interactions</div>
           </div>
           <div class="text-center reveal delay-200">
             <div
-              class="w-16 h-16 mx-auto bg-white/10 rounded-full flex items-center justify-center mb-4 text-3xl"
+              class="w-16 h-16 mx-auto bg-white/10 dark:bg-white/5 rounded-full flex items-center justify-center mb-4 text-3xl transition-transform duration-300 hover:scale-125 cursor-default"
             >
-              <i class="fa-solid fa-users text-green-300"></i>
+              <i class="fa-solid fa-users text-green-300 dark:text-green-400"></i>
             </div>
-            <div class="font-bold text-lg">Team Oversight</div>
+            <div class="font-bold text-lg dark:text-gray-200">Team Oversight</div>
           </div>
           <div class="text-center reveal delay-300">
             <div
-              class="w-16 h-16 mx-auto bg-white/10 rounded-full flex items-center justify-center mb-4 text-3xl"
+              class="w-16 h-16 mx-auto bg-white/10 dark:bg-white/5 rounded-full flex items-center justify-center mb-4 text-3xl transition-transform duration-300 hover:scale-125 cursor-default"
             >
-              <i class="fa-solid fa-handshake-angle text-purple-300"></i>
+              <i class="fa-solid fa-handshake-angle text-purple-300 dark:text-purple-400"></i>
             </div>
-            <div class="font-bold text-lg">Convert More</div>
+            <div class="font-bold text-lg dark:text-gray-200">Convert More</div>
           </div>
         </div>
       </div>
     </section>
 
     <!-- Features Section -->
-    <section id="features" class="py-24 bg-gray-50">
+    <section id="features" class="py-24 bg-gray-50 dark:bg-dark transition-colors duration-300">
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="text-center max-w-3xl mx-auto mb-16 reveal">
           <h2
-            class="text-primary font-bold tracking-wide uppercase text-sm mb-3"
+            class="text-primary dark:text-blue-400 font-bold tracking-wide uppercase text-sm mb-3 transition-colors"
           >
             Core Features
           </h2>
-          <h3 class="text-3xl md:text-4xl font-extrabold text-dark">
+          <h3 class="text-3xl md:text-4xl font-extrabold text-dark dark:text-white transition-colors">
             Everything you need to close
           </h3>
         </div>
@@ -685,15 +729,15 @@
         <div class="grid grid-cols-1 md:grid-cols-2 gap-8 lg:gap-12">
           <!-- Feature 1 -->
           <div
-            class="bg-white rounded-2xl p-8 shadow-sm hover:shadow-xl transition-shadow duration-300 border border-gray-100 group reveal"
+            class="bg-white dark:bg-slate-800 rounded-2xl p-8 shadow-sm hover:shadow-xl dark:shadow-none dark:hover:shadow-blue-900/20 hover:-translate-y-2 hover:border-primary/50 dark:hover:border-secondary/50 transition-all duration-300 border border-gray-100 dark:border-slate-700 group reveal"
           >
             <div
-              class="w-14 h-14 bg-blue-50 text-secondary rounded-xl flex items-center justify-center text-2xl mb-6 group-hover:scale-110 transition-transform duration-300"
+              class="w-14 h-14 bg-blue-50 dark:bg-blue-900/30 text-secondary dark:text-blue-400 rounded-xl flex items-center justify-center text-2xl mb-6 group-hover:scale-110 transition-transform duration-300"
             >
-              <i class="fa-solid fa-magnet text-primary"></i>
+              <i class="fa-solid fa-magnet text-primary dark:text-blue-400"></i>
             </div>
-            <h4 class="text-xl font-bold text-dark mb-3">Lead Capture</h4>
-            <p class="text-gray-600 leading-relaxed">
+            <h4 class="text-xl font-bold text-dark dark:text-white mb-3 transition-colors">Lead Capture</h4>
+            <p class="text-gray-600 dark:text-gray-400 leading-relaxed transition-colors">
               Automatically capture leads from website forms, WhatsApp, social
               media, phone calls and email. Never lose a lead to manual entry
               errors.
@@ -702,15 +746,15 @@
 
           <!-- Feature 2 -->
           <div
-            class="bg-white rounded-2xl p-8 shadow-sm hover:shadow-xl transition-shadow duration-300 border border-gray-100 group reveal delay-100"
+            class="bg-white dark:bg-slate-800 rounded-2xl p-8 shadow-sm hover:shadow-xl dark:shadow-none dark:hover:shadow-indigo-900/20 hover:-translate-y-2 hover:border-indigo-400/50 dark:hover:border-indigo-400/50 transition-all duration-300 border border-gray-100 dark:border-slate-700 group reveal delay-100"
           >
             <div
-              class="w-14 h-14 bg-indigo-50 text-indigo-500 rounded-xl flex items-center justify-center text-2xl mb-6 group-hover:scale-110 transition-transform duration-300"
+              class="w-14 h-14 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-500 dark:text-indigo-400 rounded-xl flex items-center justify-center text-2xl mb-6 group-hover:scale-110 transition-transform duration-300"
             >
-              <i class="fa-solid fa-list-check text-indigo-600"></i>
+              <i class="fa-solid fa-list-check text-indigo-600 dark:text-indigo-400"></i>
             </div>
-            <h4 class="text-xl font-bold text-dark mb-3">Sales Processing</h4>
-            <p class="text-gray-600 leading-relaxed">
+            <h4 class="text-xl font-bold text-dark dark:text-white mb-3 transition-colors">Sales Processing</h4>
+            <p class="text-gray-600 dark:text-gray-400 leading-relaxed transition-colors">
               Manage follow-ups, email synchronization and maintain CRM
               interaction history. Keep the context of every conversation in one
               place.
@@ -719,15 +763,15 @@
 
           <!-- Feature 3 -->
           <div
-            class="bg-white rounded-2xl p-8 shadow-sm hover:shadow-xl transition-shadow duration-300 border border-gray-100 group reveal"
+            class="bg-white dark:bg-slate-800 rounded-2xl p-8 shadow-sm hover:shadow-xl dark:shadow-none dark:hover:shadow-purple-900/20 hover:-translate-y-2 hover:border-purple-400/50 dark:hover:border-purple-400/50 transition-all duration-300 border border-gray-100 dark:border-slate-700 group reveal"
           >
             <div
-              class="w-14 h-14 bg-purple-50 text-purple-500 rounded-xl flex items-center justify-center text-2xl mb-6 group-hover:scale-110 transition-transform duration-300"
+              class="w-14 h-14 bg-purple-50 dark:bg-purple-900/30 text-purple-500 dark:text-purple-400 rounded-xl flex items-center justify-center text-2xl mb-6 group-hover:scale-110 transition-transform duration-300"
             >
-              <i class="fa-solid fa-chart-pie text-purple-600"></i>
+              <i class="fa-solid fa-chart-pie text-purple-600 dark:text-purple-400"></i>
             </div>
-            <h4 class="text-xl font-bold text-dark mb-3">Manager Monitoring</h4>
-            <p class="text-gray-600 leading-relaxed">
+            <h4 class="text-xl font-bold text-dark dark:text-white mb-3 transition-colors">Manager Monitoring</h4>
+            <p class="text-gray-600 dark:text-gray-400 leading-relaxed transition-colors">
               Managers can track team performance, response time and lead
               progress through intuitive dashboards and real-time reports.
             </p>
@@ -735,17 +779,17 @@
 
           <!-- Feature 4 -->
           <div
-            class="bg-white rounded-2xl p-8 shadow-sm hover:shadow-xl transition-shadow duration-300 border border-gray-100 group reveal delay-100"
+            class="bg-white dark:bg-slate-800 rounded-2xl p-8 shadow-sm hover:shadow-xl dark:shadow-none dark:hover:shadow-red-900/20 hover:-translate-y-2 hover:border-red-400/50 dark:hover:border-red-400/50 transition-all duration-300 border border-gray-100 dark:border-slate-700 group reveal delay-100"
           >
             <div
-              class="w-14 h-14 bg-red-50 text-red-500 rounded-xl flex items-center justify-center text-2xl mb-6 group-hover:scale-110 transition-transform duration-300"
+              class="w-14 h-14 bg-red-50 dark:bg-red-900/30 text-red-500 dark:text-red-400 rounded-xl flex items-center justify-center text-2xl mb-6 group-hover:scale-110 transition-transform duration-300"
             >
-              <i class="fa-solid fa-arrow-up-right-dots text-red-600"></i>
+              <i class="fa-solid fa-angles-up text-red-600 dark:text-red-400"></i>
             </div>
-            <h4 class="text-xl font-bold text-dark mb-3">
+            <h4 class="text-xl font-bold text-dark dark:text-white mb-3 transition-colors">
               Automated Escalation
             </h4>
-            <p class="text-gray-600 leading-relaxed">
+            <p class="text-gray-600 dark:text-gray-400 leading-relaxed transition-colors">
               Set SLA rules. If a lead is not handled within a certain time, it
               can automatically escalate to managers to ensure zero drop-offs.
             </p>
@@ -755,45 +799,45 @@
     </section>
 
     <!-- Benefits Section -->
-    <section class="py-20 bg-white border-t border-b border-gray-100">
+    <section class="py-20 bg-white dark:bg-slate-900 border-t border-b border-gray-100 dark:border-slate-800 transition-colors duration-300">
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="text-center mb-16 reveal">
-          <h3 class="text-3xl font-extrabold text-dark">
+          <h3 class="text-3xl font-extrabold text-dark dark:text-white transition-colors">
             Why Choose Our Platform
           </h3>
         </div>
 
         <div class="flex flex-wrap justify-center gap-4 reveal">
           <div
-            class="bg-accent text-primary px-6 py-4 rounded-full font-semibold border border-blue-100 shadow-sm flex items-center hover:-translate-y-1 transition transform duration-200"
+            class="bg-accent dark:bg-slate-800 text-primary dark:text-blue-400 px-6 py-4 rounded-full font-semibold border border-blue-100 dark:border-slate-700 shadow-sm flex items-center hover:-translate-y-1 transition transform duration-200"
           >
             <i class="fa-solid fa-arrow-trend-up mr-3"></i> Increase lead
             conversion rates
           </div>
           <div
-            class="bg-accent text-primary px-6 py-4 rounded-full font-semibold border border-blue-100 shadow-sm flex items-center hover:-translate-y-1 transition transform duration-200"
+            class="bg-accent dark:bg-slate-800 text-primary dark:text-blue-400 px-6 py-4 rounded-full font-semibold border border-blue-100 dark:border-slate-700 shadow-sm flex items-center hover:-translate-y-1 transition transform duration-200"
           >
             <i class="fa-solid fa-bullseye mr-3"></i> Reduce missed
             opportunities
           </div>
           <div
-            class="bg-accent text-primary px-6 py-4 rounded-full font-semibold border border-blue-100 shadow-sm flex items-center hover:-translate-y-1 transition transform duration-200"
+            class="bg-accent dark:bg-slate-800 text-primary dark:text-blue-400 px-6 py-4 rounded-full font-semibold border border-blue-100 dark:border-slate-700 shadow-sm flex items-center hover:-translate-y-1 transition transform duration-200"
           >
             <i class="fa-solid fa-stopwatch mr-3"></i> Improve response time
           </div>
           <div
-            class="bg-accent text-primary px-6 py-4 rounded-full font-semibold border border-blue-100 shadow-sm flex items-center hover:-translate-y-1 transition transform duration-200"
+            class="bg-accent dark:bg-slate-800 text-primary dark:text-blue-400 px-6 py-4 rounded-full font-semibold border border-blue-100 dark:border-slate-700 shadow-sm flex items-center hover:-translate-y-1 transition transform duration-200"
           >
             <i class="fa-solid fa-eye mr-3"></i> Better sales visibility
           </div>
           <div
-            class="bg-accent text-primary px-6 py-4 rounded-full font-semibold border border-blue-100 shadow-sm flex items-center hover:-translate-y-1 transition transform duration-200"
+            class="bg-accent dark:bg-slate-800 text-primary dark:text-blue-400 px-6 py-4 rounded-full font-semibold border border-blue-100 dark:border-slate-700 shadow-sm flex items-center hover:-translate-y-1 transition transform duration-200"
           >
             <i class="fa-solid fa-folder-tree mr-3"></i> Centralized lead
             management
           </div>
           <div
-            class="bg-primary text-white px-8 py-4 rounded-full font-bold shadow-md flex items-center hover:-translate-y-1 transition transform duration-200 cursor-default shadow-blue-500/30"
+            class="bg-primary dark:bg-blue-600 text-white px-8 py-4 rounded-full font-bold shadow-md flex items-center hover:-translate-y-1 transition transform duration-200 cursor-default shadow-blue-500/30"
           >
             <i class="fa-solid fa-trophy mr-3 text-yellow-300"></i> Convert more
             leads into customers
@@ -803,18 +847,18 @@
     </section>
 
     <!-- System Architecture -->
-    <section id="architecture" class="py-24 bg-gray-50 overflow-hidden">
+    <section id="architecture" class="py-24 bg-gray-50 dark:bg-dark overflow-hidden transition-colors duration-300">
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="text-center max-w-3xl mx-auto mb-16 reveal">
           <h2
-            class="text-primary font-bold tracking-wide uppercase text-sm mb-3"
+            class="text-primary dark:text-blue-400 font-bold tracking-wide uppercase text-sm mb-3 transition-colors"
           >
             Enterprise Grade
           </h2>
-          <h3 class="text-3xl md:text-4xl font-extrabold text-dark">
+          <h3 class="text-3xl md:text-4xl font-extrabold text-dark dark:text-white transition-colors">
             System Architecture
           </h3>
-          <p class="mt-4 text-gray-600">
+          <p class="mt-4 text-gray-600 dark:text-gray-400 transition-colors">
             Built on modern, secure, and scalable technologies.
           </p>
         </div>
@@ -822,7 +866,7 @@
         <div class="relative max-w-4xl mx-auto">
           <!-- Connecting Line -->
           <div
-            class="hidden md:block absolute left-1/2 top-0 bottom-0 w-1 bg-gradient-to-b from-blue-200 via-primary to-blue-200 -translate-x-1/2 rounded-full"
+            class="hidden md:block absolute left-1/2 top-0 bottom-0 w-1 bg-gradient-to-b from-blue-200 via-primary to-blue-200 dark:from-slate-800 dark:via-blue-500 dark:to-slate-800 -translate-x-1/2 rounded-full transition-colors duration-300"
           ></div>
 
           <div class="space-y-12">
@@ -832,19 +876,19 @@
             >
               <div class="md:w-5/12 order-2 md:order-1 flex justify-end">
                 <div
-                  class="bg-white p-6 rounded-2xl shadow-md border border-gray-100 w-full hover:border-primary transition duration-300 relative"
+                  class="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-md hover:shadow-xl dark:shadow-none dark:hover:shadow-blue-900/20 border border-gray-100 dark:border-slate-700 w-full hover:border-primary dark:hover:border-secondary hover:-translate-y-2 transition-all duration-300 relative"
                 >
-                  <h4 class="font-bold text-lg text-dark mb-2">
+                  <h4 class="font-bold text-lg text-dark dark:text-white mb-2 transition-colors">
                     Presentation Layer
                   </h4>
-                  <p class="text-sm text-gray-600">
+                  <p class="text-sm text-gray-600 dark:text-gray-400 transition-colors">
                     Users interact through web applications, mobile apps,
                     chatbots and IVRS.
                   </p>
                 </div>
               </div>
               <div
-                class="z-10 bg-gradient-to-r from-secondary to-primary w-14 h-14 rounded-full border-4 border-gray-50 shadow-md flex items-center justify-center text-white order-1 md:order-2 mb-4 md:mb-0"
+                class="z-10 bg-gradient-to-r from-secondary to-primary w-14 h-14 rounded-full border-4 border-gray-50 dark:border-dark shadow-md flex items-center justify-center text-white order-1 md:order-2 mb-4 md:mb-0 transition-colors"
               >
                 <i class="fa-solid fa-laptop-code text-xl"></i>
               </div>
@@ -857,18 +901,18 @@
             >
               <div class="md:w-5/12 order-2 md:order-1"></div>
               <div
-                class="z-10 bg-gradient-to-r from-secondary to-primary w-14 h-14 rounded-full border-4 border-gray-50 shadow-md flex items-center justify-center text-white order-1 md:order-2 mb-4 md:mb-0"
+                class="z-10 bg-gradient-to-r from-secondary to-primary w-14 h-14 rounded-full border-4 border-gray-50 dark:border-dark shadow-md flex items-center justify-center text-white order-1 md:order-2 mb-4 md:mb-0 transition-colors"
               >
                 <i class="fa-solid fa-microchip text-xl"></i>
               </div>
               <div class="md:w-5/12 order-3 flex justify-start">
                 <div
-                  class="bg-white p-6 rounded-2xl shadow-md border border-gray-100 w-full hover:border-primary transition duration-300"
+                  class="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-md hover:shadow-xl dark:shadow-none dark:hover:shadow-blue-900/20 border border-gray-100 dark:border-slate-700 w-full hover:border-primary dark:hover:border-secondary hover:-translate-y-2 transition-all duration-300 relative"
                 >
-                  <h4 class="font-bold text-lg text-dark mb-2">
+                  <h4 class="font-bold text-lg text-dark dark:text-white mb-2 transition-colors">
                     Application Layer
                   </h4>
-                  <p class="text-sm text-gray-600">
+                  <p class="text-sm text-gray-600 dark:text-gray-400 transition-colors">
                     Handles business logic, security protocols and scalable
                     cloud hosting processes.
                   </p>
@@ -882,17 +926,17 @@
             >
               <div class="md:w-5/12 order-2 md:order-1 flex justify-end">
                 <div
-                  class="bg-white p-6 rounded-2xl shadow-md border border-gray-100 w-full hover:border-primary transition duration-300 relative"
+                  class="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-md hover:shadow-xl dark:shadow-none dark:hover:shadow-blue-900/20 border border-gray-100 dark:border-slate-700 w-full hover:border-primary dark:hover:border-secondary hover:-translate-y-2 transition-all duration-300 relative"
                 >
-                  <h4 class="font-bold text-lg text-dark mb-2">Data Layer</h4>
-                  <p class="text-sm text-gray-600">
+                  <h4 class="font-bold text-lg text-dark dark:text-white mb-2 transition-colors">Data Layer</h4>
+                  <p class="text-sm text-gray-600 dark:text-gray-400 transition-colors">
                     Secure database storage with automated backup, encryption
                     and high scalability.
                   </p>
                 </div>
               </div>
               <div
-                class="z-10 bg-gradient-to-r from-secondary to-primary w-14 h-14 rounded-full border-4 border-gray-50 shadow-md flex items-center justify-center text-white order-1 md:order-2 mb-4 md:mb-0"
+                class="z-10 bg-gradient-to-r from-secondary to-primary w-14 h-14 rounded-full border-4 border-gray-50 dark:border-dark shadow-md flex items-center justify-center text-white order-1 md:order-2 mb-4 md:mb-0 transition-colors"
               >
                 <i class="fa-solid fa-database text-xl"></i>
               </div>
@@ -905,18 +949,18 @@
             >
               <div class="md:w-5/12 order-2 md:order-1"></div>
               <div
-                class="z-10 bg-gradient-to-r from-secondary to-primary w-14 h-14 rounded-full border-4 border-gray-50 shadow-md flex items-center justify-center text-white order-1 md:order-2 mb-4 md:mb-0"
+                class="z-10 bg-gradient-to-r from-secondary to-primary w-14 h-14 rounded-full border-4 border-gray-50 dark:border-dark shadow-md flex items-center justify-center text-white order-1 md:order-2 mb-4 md:mb-0 transition-colors"
               >
                 <i class="fa-solid fa-chart-pie text-xl"></i>
               </div>
               <div class="md:w-5/12 order-3 flex justify-start">
                 <div
-                  class="bg-white p-6 rounded-2xl shadow-md border border-gray-100 w-full hover:border-primary transition duration-300"
+                  class="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-md hover:shadow-xl dark:shadow-none dark:hover:shadow-blue-900/20 border border-gray-100 dark:border-slate-700 w-full hover:border-primary dark:hover:border-secondary hover:-translate-y-2 transition-all duration-300 relative"
                 >
-                  <h4 class="font-bold text-lg text-dark mb-2">
+                  <h4 class="font-bold text-lg text-dark dark:text-white mb-2 transition-colors">
                     Reporting Layer
                   </h4>
-                  <p class="text-sm text-gray-600">
+                  <p class="text-sm text-gray-600 dark:text-gray-400 transition-colors">
                     Provides comprehensive dashboards, advanced analytics and
                     real-time performance insights.
                   </p>
@@ -930,28 +974,11 @@
 
     <!-- Call to Action -->
     <section
-      class="py-24 bg-gradient-to-br from-primary to-blue-900 border-t border-blue-800 relative overflow-hidden"
+      class="py-24 bg-gradient-to-br from-primary to-blue-900 dark:from-slate-900 dark:to-slate-800 border-t border-blue-800 dark:border-slate-800 relative overflow-hidden transition-colors duration-300"
     >
       <!-- Background graphics -->
-      <div class="absolute inset-0 opacity-20">
-        <svg width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
-          <defs>
-            <pattern
-              id="grid"
-              width="40"
-              height="40"
-              patternUnits="userSpaceOnUse"
-            >
-              <path
-                d="M 40 0 L 0 0 0 40"
-                fill="none"
-                stroke="white"
-                stroke-width="1"
-              />
-            </pattern>
-          </defs>
-          <rect width="100%" height="100%" fill="url(#grid)" />
-        </svg>
+      <div id="cta-grid" class="absolute inset-0 opacity-20">
+        <canvas id="cta-canvas" style="width:100%;height:100%;display:block;"></canvas>
       </div>
 
       <div
@@ -962,7 +989,7 @@
         >
           Start Managing Your Leads Efficiently
         </h2>
-        <p class="text-xl text-blue-100 mb-10 max-w-2xl mx-auto font-light">
+        <p class="text-xl text-blue-100 dark:text-gray-300 mb-10 max-w-2xl mx-auto font-light transition-colors">
           Join modern businesses that are converting more leads and closing more
           deals with our centralized platform.
         </p>
@@ -971,13 +998,13 @@
         >
           <a
             href="{% url 'inquiry_form' %}"
-            class="w-full sm:w-auto px-8 py-4 border border-transparent text-lg font-bold rounded-xl text-primary bg-white hover:bg-gray-50 shadow-xl transition transform hover:-translate-y-1"
+            class="w-full sm:w-auto px-8 py-4 border border-transparent text-lg font-bold rounded-xl text-primary dark:text-white bg-white dark:bg-blue-600 hover:bg-gray-50 dark:hover:bg-blue-700 shadow-xl transition transform hover:-translate-y-1"
           >
             Submit Inquiry
           </a>
           <a
             href="{% url 'login' %}"
-            class="w-full sm:w-auto px-8 py-4 border-2 border-white/50 text-lg font-bold rounded-xl text-white bg-white/10 hover:bg-white/20 hover:border-white shadow-lg backdrop-blur-sm transition transform hover:-translate-y-1"
+            class="w-full sm:w-auto px-8 py-4 border-2 border-white/50 dark:border-slate-600 text-lg font-bold rounded-xl text-white bg-white/10 dark:bg-slate-800 hover:bg-white/20 dark:hover:bg-slate-700 hover:border-white shadow-lg backdrop-blur-sm transition transform hover:-translate-y-1"
           >
             Login
           </a>
@@ -987,12 +1014,13 @@
               document.getElementById('chatbot-fab').click();
               return false;
             "
-            class="w-full sm:w-auto px-6 py-4 text-lg font-medium rounded-xl text-white/80 hover:text-white transition group flex justify-center mt-4 sm:mt-0"
+            class="group w-full sm:w-auto px-6 py-4 text-lg font-medium rounded-xl text-white/80 dark:text-gray-400 hover:text-white dark:hover:text-white hover:bg-white/10 dark:hover:bg-slate-800 transition-all duration-300 flex justify-center items-center gap-2 mt-4 sm:mt-0"
           >
-            <i
-              class="fa-regular fa-comment-dots mr-2 mt-1 transition-transform group-hover:scale-110"
-            ></i>
-            Chatbot
+            <div class="relative w-6 h-6 flex items-center justify-center">
+              <i class="fa-regular fa-comment-dots absolute transition-all duration-300 transform group-hover:-translate-y-4 group-hover:scale-0 group-hover:opacity-0 text-xl"></i>
+              <i class="fa-solid fa-robot absolute transition-all duration-300 transform translate-y-4 scale-0 opacity-0 group-hover:translate-y-0 group-hover:scale-110 group-hover:opacity-100 text-xl text-white drop-shadow-md"></i>
+            </div>
+            <span class="whitespace-nowrap transition-transform duration-300 group-hover:translate-x-1">Chatbot</span>
           </a>
         </div>
       </div>
@@ -1158,6 +1186,148 @@
 
     <!-- Scripts for animations -->
     <script>
+      // Hero Interactive Particle Network
+      (function() {
+        const canvas = document.getElementById('hero-canvas');
+        if (!canvas) return;
+        const ctx = canvas.getContext('2d');
+        const heroSection = document.getElementById('hero-section');
+        
+        let width, height;
+        let particles = [];
+        const mouse = { x: -9999, y: -9999 };
+        let isCapturing = false;
+        let captureTimer = null;
+
+        function init() {
+          width = heroSection.offsetWidth;
+          height = heroSection.offsetHeight;
+          canvas.width = width;
+          canvas.height = height;
+          
+          particles = [];
+          const particleCount = Math.min(Math.floor(width * height / 15000), 100); // Responsive amount
+          
+          for(let i = 0; i < particleCount; i++) {
+            particles.push({
+              x: Math.random() * width,
+              y: Math.random() * height,
+              vx: (Math.random() - 0.5) * 0.8,
+              vy: (Math.random() - 0.5) * 0.8,
+              radius: Math.random() * 2 + 1,
+              hasText: i < 25 // First 25 particles have text (leads)
+            });
+          }
+        }
+
+        function draw() {
+          const isDark = document.documentElement.classList.contains('dark');
+          ctx.clearRect(0, 0, width, height);
+          
+          // Draw and update particles
+          for(let i = 0; i < particles.length; i++) {
+            let p = particles[i];
+            
+            // Mouse interaction
+            let dx = mouse.x - p.x;
+            let dy = mouse.y - p.y;
+            let dist = Math.sqrt(dx * dx + dy * dy);
+            
+            if (isCapturing && p.hasText) {
+              const trigger = document.getElementById('capture-trigger');
+              const rect = trigger.getBoundingClientRect();
+              const heroRect = heroSection.getBoundingClientRect();
+              const targetX = rect.left - heroRect.left + rect.width / 2;
+              const targetY = rect.top - heroRect.top + rect.height / 2;
+              
+              p.x += (targetX - p.x) * 0.05;
+              p.y += (targetY - p.y) * 0.05;
+            } else if (dist < 150) {
+              p.x -= dx * 0.02; // Subtle repel
+              p.y -= dy * 0.02;
+            }
+
+            // Move
+            p.x += p.vx;
+            p.y += p.vy;
+
+            // Bounce off edges
+            if(p.x < 0 || p.x > width) p.vx *= -1;
+            if(p.y < 0 || p.y > height) p.vy *= -1;
+
+            // Draw particle
+            ctx.beginPath();
+            ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+            ctx.fillStyle = isDark ? 'rgba(96, 165, 250, 0.9)' : 'rgba(30, 58, 138, 0.8)'; 
+            ctx.fill();
+
+            // Connect lines
+            for(let j = i + 1; j < particles.length; j++) {
+              let p2 = particles[j];
+              let dx2 = p.x - p2.x;
+              let dy2 = p.y - p2.y;
+              let dist2 = Math.sqrt(dx2 * dx2 + dy2 * dy2);
+              
+              
+              if(dist2 < 120) {
+                ctx.beginPath();
+                ctx.moveTo(p.x, p.y);
+                ctx.lineTo(p2.x, p2.y);
+                const lineAlpha = 0.5 * (1 - dist2 / 120);
+                ctx.strokeStyle = isDark ? `rgba(96, 165, 250, ${lineAlpha})` : `rgba(30, 58, 138, ${lineAlpha})`;
+                ctx.stroke();
+              }
+            }
+
+            // Draw text attached to joint
+            if (p.hasText) {
+              ctx.font = "bold 13px 'Inter', sans-serif";
+              ctx.fillStyle = isDark ? 'rgba(255, 255, 255, 0.95)' : 'rgba(15, 23, 42, 0.9)'; 
+              ctx.fillText("leads", p.x + 10, p.y + 5);
+            }
+          }
+          requestAnimationFrame(draw);
+        }
+
+        heroSection.addEventListener('mousemove', (e) => {
+          const rect = heroSection.getBoundingClientRect();
+          mouse.x = e.clientX - rect.left;
+          mouse.y = e.clientY - rect.top;
+        });
+
+        heroSection.addEventListener('mouseleave', () => {
+          mouse.x = -9999;
+          mouse.y = -9999;
+        });
+
+        const triggerNode = document.getElementById('capture-trigger');
+        if (triggerNode) {
+          triggerNode.addEventListener('click', () => {
+            isCapturing = true;
+            if (captureTimer) clearTimeout(captureTimer);
+            captureTimer = setTimeout(() => {
+              isCapturing = false;
+            }, 3000);
+          });
+
+          triggerNode.addEventListener('mouseleave', () => {
+            if (isCapturing) {
+               // If already clicked, we might want to keep it? 
+               // User said "mouse ya focus hatne ke bad automatic vapas"
+               // So if we leave the trigger, we can reset it sooner if we want,
+               // but the 3s timer is a good safety.
+               // Let's add the exit condition specifically for mouseleave if they already clicked.
+               // Actually, 3s is what they asked for.
+            }
+          });
+        }
+
+        window.addEventListener('resize', init);
+        
+        init();
+        draw();
+      })();
+
       // Reveal elements on scroll
       function reveal() {
         var reveals = document.querySelectorAll(".reveal");
@@ -1201,6 +1371,81 @@
 
       // Set Chatbot URL for landing page usage
       window.LEADGEN_CHATBOT_SUBMIT_URL = "{% url 'chatbot_submit' %}";
+
+      // CTA grid animated crossing lines (small dense loop)
+      (function () {
+        var canvas = document.getElementById('cta-canvas');
+        if (!canvas) return;
+        var ctx = canvas.getContext('2d');
+        
+        var lines = [];
+        var spacing = 15; // Grid box size (small)
+
+        function initLines() {
+          lines = [];
+          // Vertical lines
+          for (var x = 0; x < canvas.width; x += spacing) {
+            lines.push({
+              isVertical: true,
+              pos: x,
+              speed: (Math.random() * 0.4 + 0.1) * (Math.random() > 0.5 ? 1 : -1),
+              opacity: Math.random() * 0.2 + 0.05
+            });
+          }
+          // Horizontal lines
+          for (var y = 0; y < canvas.height; y += spacing) {
+            lines.push({
+              isVertical: false,
+              pos: y,
+              speed: (Math.random() * 0.4 + 0.1) * (Math.random() > 0.5 ? 1 : -1),
+              opacity: Math.random() * 0.2 + 0.05
+            });
+          }
+        }
+
+        function resize() {
+          var p = canvas.parentElement;
+          canvas.width  = p.offsetWidth  || window.innerWidth;
+          canvas.height = p.offsetHeight || 200;
+          initLines();
+        }
+
+        function draw() {
+          ctx.clearRect(0, 0, canvas.width, canvas.height);
+          ctx.lineWidth = 1;
+
+          for (var i = 0; i < lines.length; i++) {
+            var line = lines[i];
+            line.pos += line.speed;
+
+            if (line.isVertical) {
+               if (line.pos > canvas.width) line.pos = 0;
+               if (line.pos < 0) line.pos = canvas.width;
+               
+               ctx.beginPath();
+               ctx.strokeStyle = 'rgba(255, 255, 255, ' + line.opacity + ')';
+               ctx.moveTo(line.pos, 0);
+               ctx.lineTo(line.pos, canvas.height);
+               ctx.stroke();
+            } else {
+               if (line.pos > canvas.height) line.pos = 0;
+               if (line.pos < 0) line.pos = canvas.height;
+
+               ctx.beginPath();
+               ctx.strokeStyle = 'rgba(255, 255, 255, ' + line.opacity + ')';
+               ctx.moveTo(0, line.pos);
+               ctx.lineTo(canvas.width, line.pos);
+               ctx.stroke();
+            }
+          }
+          requestAnimationFrame(draw);
+        }
+
+        resize();
+        window.addEventListener('resize', resize);
+        draw();
+      })();
+
     </script>
 
     <!-- Chatbot Widget Entry Point -->

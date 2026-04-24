@@ -91,7 +91,11 @@
                                 </span>
                             </td>
                             <td class="px-8 py-5 text-right space-x-2">
-                                {% if user.userprofile.role == 'admin' or user.userprofile.role == 'manager' or user.userprofile.role == 'editor' %}
+                                {% if u.role == 'manager' and user.userprofile.role != 'admin' %}
+                                <a href="{% url 'edit_user' u.user.id %}" class="inline-flex items-center px-4 py-2 bg-blue-50 border border-blue-100 rounded-xl text-blue-600 text-xs font-bold hover:bg-blue-600 hover:text-white transition-all">
+                                    <i class="fa-solid fa-eye mr-2 text-[10px]"></i> View
+                                </a>
+                                {% elif user.userprofile.role == 'admin' or user.userprofile.role == 'manager' or user.userprofile.role == 'editor' %}
                                 <a href="{% url 'edit_user' u.user.id %}" class="inline-flex items-center px-4 py-2 bg-white border border-gray-100 rounded-xl text-blue-600 text-xs font-bold hover:bg-blue-600 hover:text-white shadow-sm transition-all">
                                     <i class="fa-solid fa-pen-to-square mr-2 text-[10px]"></i> Edit
                                 </a>

@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Lead, LeadActivity, Ticket
+from .models import Lead, LeadActivity, Ticket, Department, Company
 
 
 @admin.register(Lead)
@@ -21,3 +21,9 @@ class TicketAdmin(admin.ModelAdmin):
     list_display = ['id', 'subject', 'status', 'source', 'lead', 'created_at']
     list_filter = ['status', 'source', 'created_at']
     search_fields = ['subject', 'description', 'customer_name', 'customer_email', 'customer_phone']
+
+@admin.register(Department)
+class DepartmentAdmin(admin.ModelAdmin):
+    list_display = ['name', 'company']
+    list_filter = ['company']
+    search_fields = ['name', 'company__name']

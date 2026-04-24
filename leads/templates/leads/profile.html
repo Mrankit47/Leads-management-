@@ -72,7 +72,7 @@
                 <h1 class="text-4xl font-black text-slate-900 tracking-tight">Personal Profile</h1>
                 <p class="text-slate-500 font-medium mt-1">Manage your account information and preferences</p>
             </div>
-            <a href="{% url 'employee_dashboard' %}" class="px-6 py-3 bg-white border border-slate-200 text-slate-700 font-bold rounded-xl shadow-sm hover:bg-slate-50 transition-all flex items-center gap-2">
+            <a href="{% url dashboard_url|default:'employee_dashboard' %}" class="px-6 py-3 bg-white border border-slate-200 text-slate-700 font-bold rounded-xl shadow-sm hover:bg-slate-50 transition-all flex items-center gap-2">
                 <i class="fas fa-arrow-left text-xs"></i> Back to Dashboard
             </a>
         </header>

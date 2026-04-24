@@ -13,13 +13,12 @@ urlpatterns = [
     path('manager/fetch-emails/', views.fetch_email_inquiries, name='manager_fetch_emails'),
     #path('login/', auth_views.LoginView.as_view(template_name='leads/login.html'), name='login'),
     path("login/", views.employee_login, name="login"),
-    path('logout/', auth_views.LogoutView.as_view(next_page='login'), name='logout'),
+    path("logout/", auth_views.LogoutView.as_view(next_page='login'), name='logout'),
     path('superadmin/login/', views.superadmin_login, name='superadmin_login'),
     path('superadmin/dashboard/', views.superadmin_dashboard, name='superadmin_dashboard'),
     path("superadmin/create-company/", views.create_company, name="create_company"),
     path("superadmin/delete-company/<int:company_id>/", views.delete_company, name="delete_company"),
-    path("logout/", views.user_logout, name="logout"),
-    path("company-admin/dashboard/", views.company_admin_dashboard, name="company_admin_dashboard"),
+    path("company-admin/", views.company_admin_dashboard, name="company_admin_dashboard"),
     path("company-admin/users/", views.users_list, name="users_list"),
     path("company-admin/create-user/", views.create_user, name="create_user"),
     path("company-admin/delete-user/<int:user_id>/", views.delete_user, name="delete_user"),
@@ -29,6 +28,7 @@ urlpatterns = [
     path("tickets/", views.tickets_list, name="tickets_list"),
     path("tickets/create/", views.create_ticket, name="create_ticket"),
     path("tickets/<int:id>/", views.ticket_detail, name="ticket_detail"),
+    path("tickets/<int:id>/edit/", views.edit_ticket, name="edit_ticket"),
     path("tickets/<int:id>/delete/", views.delete_ticket, name="delete_ticket"),
 
     path(

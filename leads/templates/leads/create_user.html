@@ -102,10 +102,9 @@
                     <div class="relative">
                         <i class="fa-solid fa-building-user absolute left-4 top-1/2 -translate-y-1/2 text-gray-300 text-xs"></i>
                         <select name="department" class="w-full pl-10 pr-4 py-3.5 bg-white border border-gray-200 rounded-2xl focus:border-blue-600 focus:ring-4 focus:ring-blue-100 outline-none transition-all duration-200 font-medium cursor-pointer appearance-none">
-                            <option value="sales">Sales</option>
-                            <option value="marketing">Marketing</option>
-                            <option value="support">Support</option>
-                            <option value="operations">Operations</option>
+                            {% for dept in available_departments %}
+                            <option value="{{ dept.id }}">{{ dept.name }}</option>
+                            {% endfor %}
                         </select>
                         <i class="fa-solid fa-chevron-down absolute right-4 top-1/2 -translate-y-1/2 text-gray-300 text-[10px] pointer-events-none"></i>
                     </div>
@@ -117,13 +116,9 @@
                     <div class="relative">
                         <i class="fa-solid fa-shield-halved absolute left-4 top-1/2 -translate-y-1/2 text-gray-300 text-xs"></i>
                         <select name="role" class="w-full pl-10 pr-4 py-3.5 bg-white border border-gray-200 rounded-2xl focus:border-blue-600 focus:ring-4 focus:ring-blue-100 outline-none transition-all duration-200 font-medium cursor-pointer appearance-none">
-                            {% if user.userprofile.role == 'admin' %}
-                            <option value="manager">Manager</option>
-                            <option value="admin">Admin (Co-Admin)</option>
-                            {% endif %}
-                            <option value="editor">Editor</option>
-                            <option value="employee">Employee</option>
-                            <option value="hybrid">Hybrid</option>
+                            {% for role_code, role_name in assignable_roles %}
+                            <option value="{{ role_code }}">{{ role_name }}</option>
+                            {% endfor %}
                         </select>
                         <i class="fa-solid fa-chevron-down absolute right-4 top-1/2 -translate-y-1/2 text-gray-300 text-[10px] pointer-events-none"></i>
                     </div>
@@ -131,7 +126,7 @@
                     <div class="mt-3 flex items-start gap-2 bg-blue-50 border border-blue-100 p-3 rounded-xl">
                         <i class="fa-solid fa-circle-info text-blue-600 text-xs mt-0.5"></i>
                         <p class="text-[11px] text-blue-700 font-bold leading-relaxed">
-                            Manager Note: You can authorize Editor, Employee, or Hybrid permissions.
+                            Manager Note: You can authorize Staff permissions.
                         </p>
                     </div>
                     {% endif %}

@@ -95,6 +95,10 @@
             <div>
                 <p class="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-4 px-3">Main Navigation</p>
                 <div class="space-y-1">
+                    <a href="{% url 'manager_dashboard' %}" class="nav-link-btn">
+                        <i class="fa-solid fa-users w-4"></i>
+                        <span>Main Dashboard</span>
+                    </a>
                     <button id="btn-dashboard-section" class="nav-link-btn active-btn" onclick="showSection('dashboard-section')">
                         <i class="fa-solid fa-house-chimney w-4"></i>
                         <span>Dashboard</span>
@@ -112,10 +116,6 @@
                     <button id="btn-sources-section" class="nav-link-btn" onclick="showSection('sources-section')">
                         <i class="fa-solid fa-layer-group w-4"></i>
                         <span>Lead Sources</span>
-                    </button>
-                    <button id="btn-count-section" class="nav-link-btn" onclick="showSection('count-section')">
-                        <i class="fa-solid fa-sliders w-4"></i>
-                        <span>Count Settings</span>
                     </button>
                 </div>
             </div>
@@ -400,20 +400,6 @@
         </div>
     </div>
 
-    <!-- 3. COUNT SETTINGS -->
-    <div id="count-section" class="dashboard-section">
-        <div class="mb-8">
-            <h1 class="text-3xl font-extrabold text-blue-900 tracking-tight">Count Settings</h1>
-            <p class="text-blue-600 font-semibold text-sm">Fine-tune Data Visualization & Limits</p>
-        </div>
-        <div class="glass-card p-12 rounded-3xl text-center border border-dashed border-blue-200">
-            <div class="w-20 h-20 bg-blue-50 rounded-full flex items-center justify-center mx-auto mb-6">
-                <i class="fa-solid fa-screwdriver-wrench text-3xl text-blue-400"></i>
-            </div>
-            <h3 class="text-xl font-black text-gray-800 mb-2">Advanced Counters Under Construction</h3>
-            <p class="text-gray-500 max-w-md mx-auto">This section will soon allow you to customize how leads are weighted and counted across different team members.</p>
-        </div>
-    </div>
 
     <!-- 4. FEEDBACK SECTION -->
     <div id="feedback-section" class="dashboard-section">

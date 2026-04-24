@@ -27,6 +27,16 @@ class Company(models.Model):
     def __str__(self):
         return self.name
 
+class Department(models.Model):
+    name = models.CharField(max_length=100)
+    company = models.ForeignKey(Company, on_delete=models.CASCADE, related_name="departments")
+
+    class Meta:
+        unique_together = ('name', 'company')
+
+    def __str__(self):
+        return f"{self.name} ({self.company.name})"
+
 class UserProfile(models.Model):
 
     ROLE_CHOICES = (
@@ -38,13 +48,6 @@ class UserProfile(models.Model):
         ("employee", "Employee"),
     )
 
-    DEPARTMENT_CHOICES = (
-        ("sales", "Sales"),
-        ("marketing", "Marketing"),
-        ("support", "Support"),
-        ("operations", "Operations"),
-    )
-
     user = models.OneToOneField(User, on_delete=models.CASCADE)
 
     company = models.ForeignKey(Company, on_delete=models.CASCADE, null=True, blank=True)
@@ -53,7 +56,7 @@ class UserProfile(models.Model):
 
     contact = models.CharField(max_length=20, blank=True)
 
-    department = models.CharField(max_length=50, choices=DEPARTMENT_CHOICES, blank=True)
+    department = models.ForeignKey(Department, on_delete=models.SET_NULL, null=True, blank=True)
 
     def __str__(self):
         return f"{self.user.username} - {self.role}"
@@ -63,10 +66,14 @@ class Lead(models.Model):
 
     STATUS_CHOICES = [
         ('inquiry', 'Inquiry'),
+        ('running', 'Running'),
         ('proposal', 'Proposal'),
         ('negotiation', 'Negotiation'),
+        ('complete', 'Complete'),
         ('closer', 'Closer'),
         ('invoice', 'Invoice'),
+        ('on_hold', 'On Hold'),
+        ('cancelled', 'Cancelled'),
     ]
 
     # Customer information
@@ -122,8 +129,17 @@ class Ticket(models.Model):
 
     STATUS_CHOICES = [
         ('open', 'Open'),
+        ('running', 'Running'),
         ('in_progress', 'In Progress'),
+        ('complete', 'Complete'),
+        ('inquiry', 'Inquiry'),
+        ('proposal', 'Proposal'),
+        ('negotiation', 'Negotiation'),
+        ('closer', 'Closer'),
+        ('invoice', 'Invoice'),
         ('closed', 'Closed'),
+        ('on_hold', 'On Hold'),
+        ('cancelled', 'Cancelled'),
     ]
 
     SOURCE_CHOICES = [
@@ -239,7 +255,7 @@ class Ticket(models.Model):
     def save(self, *args, **kwargs):
 
         if not self.ticket_id:
-            self.ticket_id = "TCK-" + uuid.uuid4().hex[:6].upper()
+            self.ticket_id = "TCK-" + str(uuid.uuid4().hex)[:6].upper()
 
         super().save(*args, **kwargs)
 
