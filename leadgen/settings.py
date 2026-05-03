@@ -4,6 +4,8 @@ Django settings for leadgen project.
 
 from pathlib import Path
 import os
+from decouple import config
+import dj_database_url
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -13,12 +15,12 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/4.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-leadgen-dev-key-change-in-production'
+SECRET_KEY = config('SECRET_KEY')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = config('DEBUG', default=False, cast=bool)
 
-ALLOWED_HOSTS = ['*']
+ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='*').split(',')
 
 
 # Application definition
@@ -36,6 +38,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -51,7 +54,7 @@ ROOT_URLCONF = 'leadgen.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': [BASE_DIR / 'templates'],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -71,10 +74,10 @@ WSGI_APPLICATION = 'leadgen.wsgi.application'
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
 
 DATABASES = {
-    "default": {
-        "ENGINE": "django.db.backends.sqlite3",
-        "NAME": BASE_DIR / "db.sqlite3",
-    }
+    'default': dj_database_url.config(
+        default=f'sqlite:///{BASE_DIR / "db.sqlite3"}',
+        conn_max_age=600
+    )
 }
 
 
@@ -113,9 +116,15 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/4.2/howto/static-files/
 
 STATIC_URL = 'static/'
+STATIC_ROOT = BASE_DIR / 'staticfiles'
 STATICFILES_DIRS = [
     BASE_DIR / 'static',
 ]
+# Enable WhiteNoise's GZip compression and long-lived browser caching
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+
+MEDIA_URL = '/media/'
+MEDIA_ROOT = BASE_DIR / 'media'
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field
@@ -135,12 +144,8 @@ EMAIL_SUBJECT_FILTER = ['inquiry', 'enquiry']  # Emails must contain one of thes
 # Gmail IMAP Configuration (for reading inquiry emails from Gmail inbox)
 GMAIL_IMAP_HOST = 'imap.gmail.com'
 GMAIL_IMAP_PORT = 993
-GMAIL_EMAIL = 'eic.developer.testing@gmail.com'  # Your Gmail address
-# IMPORTANT: Set GMAIL_APP_PASSWORD in your environment for security:
-#   export GMAIL_APP_PASSWORD='your-app-password-here'
-# For production you should use the env var version; here it's hard-coded for development only.
-# GMAIL_APP_PASSWORD = os.environ.get('GMAIL_APP_PASSWORD', '')
-GMAIL_APP_PASSWORD = 'tyoxjiqcigxjbiut'
+GMAIL_EMAIL = config('GMAIL_EMAIL', default='')
+GMAIL_APP_PASSWORD = config('GMAIL_APP_PASSWORD', default='')
 
 # Outgoing email via Gmail SMTP
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
@@ -150,6 +155,16 @@ EMAIL_HOST_USER = GMAIL_EMAIL
 EMAIL_HOST_PASSWORD = GMAIL_APP_PASSWORD
 EMAIL_USE_TLS = True
 DEFAULT_FROM_EMAIL = GMAIL_EMAIL
+
+# Production Security Settings
+if not DEBUG:
+    SECURE_BROWSER_XSS_FILTER = True
+    SECURE_CONTENT_TYPE_NOSNIFF = True
+    X_FRAME_OPTIONS = 'DENY'
+    SECURE_SSL_REDIRECT = config('SECURE_SSL_REDIRECT', default=True, cast=bool)
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
+    CSRF_TRUSTED_ORIGINS = config('CSRF_TRUSTED_ORIGINS', default='https://*.render.com').split(',')
 
 # Logging Configuration
 LOGGING = {

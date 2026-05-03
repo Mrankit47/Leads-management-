@@ -7,3 +7,6 @@ urlpatterns = [
     path('', include('leads.urls')),
     path('subscription/', include('subscriptions.urls')),
 ]
+
+handler404 = 'leadgen.views.error_404'
+handler500 = 'leadgen.views.error_500'
