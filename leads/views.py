@@ -12,8 +12,8 @@ from django.core.management import call_command
 from django.core.paginator import Paginator
 from io import StringIO
 
-from django.contrib.auth.models import User
-from django.contrib.auth import authenticate, login, logout
+from django.contrib.auth import authenticate, login, logout, get_user_model
+User = get_user_model()
 from subscriptions.services import check_lead_limit, check_user_limit
 from subscriptions.services import check_user_limit
 from leads.models import Lead, LeadActivity, Ticket, Company, UserProfile, TicketActivity, Department
@@ -23,7 +23,7 @@ from leads.forms import InquiryForm, LeadUpdateForm
 def get_dashboard_url(user):
     """Returns the named URL for the user's primary dashboard based on their role."""
     profile = getattr(user, 'userprofile', None)
-    role = getattr(profile, 'role', None) if profile else None
+    role = str(getattr(profile, 'role', '')).lower() if profile else None
 
     if user.is_superuser:
         return 'superadmin_dashboard'
@@ -31,11 +31,7 @@ def get_dashboard_url(user):
         return 'company_admin_dashboard'
     if role == 'manager':
         return 'manager_dashboard'
-    if role == 'editor':
-        return 'editor_dashboard'
-    if role == 'hybrid':
-        return 'hybrid_dashboard'
-    if role == 'employee':
+    if role in ['editor', 'hybrid', 'employee']:
         return 'employee_dashboard'
     return 'home'
 
@@ -44,44 +40,47 @@ def get_dashboard_url(user):
 
 def is_superadmin(user):
     """Check if user has superadmin role"""
+    if not user or not user.is_authenticated: return False
     profile = getattr(user, 'userprofile', None)
-    return profile is not None and profile.role == "superadmin"
-
+    return profile is not None and str(profile.role).lower() == "superadmin"
 
 def is_admin(user):
     """Check if user has admin role"""
+    if not user or not user.is_authenticated: return False
     profile = getattr(user, 'userprofile', None)
-    return profile is not None and profile.role == "admin"
-
+    return profile is not None and str(profile.role).lower() == "admin"
 
 def is_manager(user):
     """Check if user has manager role"""
+    if not user or not user.is_authenticated: return False
     profile = getattr(user, 'userprofile', None)
-    return profile is not None and profile.role == "manager"
-
+    return profile is not None and str(profile.role).lower() == "manager"
 
 def is_editor(user):
     """Check if user has editor role"""
+    if not user or not user.is_authenticated: return False
     profile = getattr(user, 'userprofile', None)
-    return profile is not None and profile.role == "editor"
-
+    return profile is not None and str(profile.role).lower() == "editor"
 
 def is_hybrid(user):
     """Check if user has hybrid role"""
+    if not user or not user.is_authenticated: return False
     profile = getattr(user, 'userprofile', None)
-    return profile is not None and profile.role == "hybrid"
-
+    return profile is not None and str(profile.role).lower() == "hybrid"
 
 def is_employee(user):
     """Check if user has employee role"""
+    if not user or not user.is_authenticated: return False
     profile = getattr(user, 'userprofile', None)
-    return profile is not None and profile.role == "employee"
-
+    return profile is not None and str(profile.role).lower() == "employee"
 
 def is_sales_team(user):
     """Check if user belongs to any sales/management role"""
+    if not user or not user.is_authenticated: return False
     profile = getattr(user, 'userprofile', None)
-    return profile is not None and profile.role in ["admin", "manager", "editor", "employee", "hybrid"]
+    if not profile: return False
+    role = str(profile.role).lower()
+    return role in ["admin", "manager", "editor", "employee", "hybrid"]
 
 
 # ---------------- PUBLIC INQUIRY FORM ---------------- #
@@ -245,9 +244,7 @@ def update_gmail_settings(request):
 # ---------------- SUPERADMIN LOGIN ---------------- #
 
 def superadmin_login(request):
-
     if request.method == "POST":
-
         username = request.POST.get("username")
         password = request.POST.get("password")
 
@@ -257,13 +254,17 @@ def superadmin_login(request):
             messages.error(request, "Invalid username or password")
             return redirect("superadmin_login")
 
+        if not user.is_active:
+            messages.error(request, "This account is inactive.")
+            return redirect("superadmin_login")
+
         profile = getattr(user, 'userprofile', None)
-        if not profile or profile.role != "superadmin":
-            messages.error(request, "You are not a superadmin")
+        role = str(getattr(profile, 'role', '')).lower()
+        if role != "superadmin":
+            messages.error(request, "You do not have superadmin privileges.")
             return redirect("superadmin_login")
 
         login(request, user)
-
         return redirect("superadmin_dashboard")
 
     return render(request, "leads/superadmin_login.html")
@@ -433,7 +434,7 @@ def dashboard(request):
     page_obj = paginator.get_page(page_number)
 
     # Set Dashboard Context for Managers
-    if profile and profile.role == "manager":
+    if profile and str(getattr(profile, 'role', '')).lower() == "manager":
         request.session['dashboard_context'] = 'secondary'
 
     return render(
@@ -573,7 +574,7 @@ def manager_dashboard(request):
     # Company Users (strictly excluding Admins, Superadmins, and the manager themselves)
     users = UserProfile.objects.filter(
         company=company
-    ).exclude(role__in=["admin", "superadmin"]).exclude(user=request.user).select_related('user')
+    ).exclude(role__iexact="admin").exclude(role__iexact="superadmin").exclude(user=request.user).select_related('user')
 
     # Available roles for managers to assign
     manageable_roles = [
@@ -605,7 +606,8 @@ def update_user_role(request):
     if not profile:
         return JsonResponse({"ok": False, "error": "User profile not found"}, status=403)
 
-    if (profile.role if profile else None) not in ["admin", "manager"]:
+    role = str(getattr(profile, 'role', '')).lower()
+    if role not in ["admin", "manager"]:
         return JsonResponse({"ok": False, "error": "Permission denied"}, status=403)
     
     data = json.loads(request.body)
@@ -619,7 +621,7 @@ def update_user_role(request):
     target_profile = get_object_or_404(UserProfile, user_id=user_id, company=company)
     
     # Manager cannot change Admin/Superadmin roles even if they knew the ID
-    if target_profile.role in ["admin", "superadmin"]:
+    if str(target_profile.role).lower() in ["admin", "superadmin"]:
         return JsonResponse({"ok": False, "error": "Cannot modify administrative roles"}, status=403)
         
     target_profile.role = new_role
@@ -693,35 +695,37 @@ def user_logout(request):
 def employee_login(request):
     """Handles employee login and redirects based on user role."""
     if request.method == "POST":
-
         username = request.POST.get("username")
         password = request.POST.get("password")
 
         user = authenticate(request, username=username, password=password)
 
         if user is not None:
-            # Check for superadmin role before logging in
+            if not user.is_active:
+                messages.error(request, "This account is inactive.")
+                return redirect("login")
+
             profile = getattr(user, 'userprofile', None)
-            if profile and (profile.role if profile else None) == "superadmin":
+            if not profile:
+                messages.error(request, "User profile not found. Please contact your admin.")
+                return redirect("login")
+
+            role = str(getattr(profile, 'role', '')).lower()
+            
+            if role == "superadmin":
                 messages.error(request, "Superadmins must use the SuperAdmin Login portal.")
                 return redirect("login")
 
             login(request, user)
 
-            if profile: # Ensure profile exists before accessing role
-                role = getattr(profile, 'role', None)
-
-                if role == "admin":
-                    return redirect("company_admin_dashboard")
-                elif role == "manager":
-                    return redirect("manager_dashboard")
-                elif role in ["editor", "employee", "hybrid"]:
-                    return redirect("employee_dashboard")
-                else:
-                    return redirect("dashboard")
+            if role == "admin":
+                return redirect("company_admin_dashboard")
+            elif role == "manager":
+                return redirect("manager_dashboard")
+            elif role in ["editor", "employee", "hybrid"]:
+                return redirect("employee_dashboard")
             else:
-                messages.error(request, "User profile not found.")
-                return redirect("login")
+                return redirect("dashboard")
         else:
             messages.error(request, "Invalid username or password.")
             return redirect("login")
@@ -806,18 +810,16 @@ def create_user(request):
             messages.error(request, "Passwords do not match")
             return redirect("create_user")
 
-        # Role validation
-        # Admin can assign any role except admin/hybrid (as per requirement)
-        # However, the user said "Remove 'admin' and 'hybrid' from the role dropdown for Company Admin"
-        # We should still allow superadmin to assign them if they were using this form (though they use django admin usually)
-        if getattr(profile, 'role', None) == "admin":
-            if role in ["admin", "hybrid", "superadmin"]:
+        role_lower = str(role).lower()
+        profile_role = str(getattr(profile, 'role', '')).lower()
+        if profile_role == "admin":
+            if role_lower in ["admin", "hybrid", "superadmin"]:
                 messages.error(request, f"Cannot assign {role} role.")
                 return redirect("create_user")
         
         # manager role restriction
-        if getattr(profile, 'role', None) == "manager":
-            if role not in ["editor", "employee"]: # Removed hybrid
+        if profile_role == "manager":
+            if role_lower not in ["editor", "employee"]: # Removed hybrid
                 messages.error(request, "Manager can only assign editor or employee role")
                 return redirect("create_user")
 
@@ -859,9 +861,10 @@ def create_user(request):
 
     # Role filtering for dropdown
     all_roles = UserProfile.ROLE_CHOICES
-    if getattr(profile, 'role', None) == "admin":
+    profile_role = str(getattr(profile, 'role', '')).lower()
+    if profile_role == "admin":
         assignable_roles = [r for r in all_roles if r[0] not in ["admin", "hybrid", "superadmin"]]
-    elif getattr(profile, 'role', None) == "manager":
+    elif profile_role == "manager":
         assignable_roles = [r for r in all_roles if r[0] in ["editor", "employee"]]
     else:
         assignable_roles = []
@@ -887,16 +890,16 @@ def users_list(request):
     users = UserProfile.objects.filter(company=company)
 
     # Role-based visibility logic
-    role = getattr(profile, 'role', None)
+    role = str(getattr(profile, 'role', '')).lower()
     if role == "editor":
         # Editors see everyone in their company EXCEPT Admins
-        users = users.exclude(role="admin")
+        users = users.exclude(role__iexact="admin")
     elif role in ["employee", "hybrid"]:
         # Standard employees/hybrids see only other employees/editors/hybrids
-        users = users.exclude(role__in=["admin", "manager"])
+        users = users.exclude(role__iexact="admin").exclude(role__iexact="manager")
     elif role == "manager":
         # Managers see everyone EXCEPT Admins
-        users = users.exclude(role="admin")
+        users = users.exclude(role__iexact="admin")
 
     return render(
         request,
@@ -957,8 +960,8 @@ def edit_user(request, user_id):
 
 
     # Role-based restriction: Editor cannot edit Admin/Manager
-    role = getattr(profile, 'role', None)
-    target_role = getattr(target_profile, 'role', None)
+    role = str(getattr(profile, 'role', '')).lower()
+    target_role = str(getattr(target_profile, 'role', '')).lower()
     if role == "editor" and target_role in ["admin", "manager"]:
         messages.error(request, "Editors cannot edit Admin or Manager profiles.")
         return redirect("users_list")
@@ -971,7 +974,7 @@ def edit_user(request, user_id):
         target_user.email = request.POST.get("email")
         target_profile.contact = request.POST.get("contact")
         # Only Admin can update role and department (as per requirements for Editor)
-        if getattr(profile, 'role', None) == "admin":
+        if str(getattr(profile, 'role', '')).lower() == "admin":
             if target_profile:
                 # Fetch Department object
                 new_dept_id = request.POST.get("department")
@@ -984,7 +987,7 @@ def edit_user(request, user_id):
                         pass
                 
                 # Role validation (prevent assigning admin/hybrid)
-                if new_role not in ["admin", "hybrid", "superadmin"]:
+                if str(new_role).lower() not in ["admin", "hybrid", "superadmin"]:
                     target_profile.role = new_role
                 
                 target_profile.save()
@@ -1024,7 +1027,7 @@ def create_ticket(request):
 
     users = User.objects.filter(
         userprofile__company=company
-    ).exclude(userprofile__role='admin')
+    ).exclude(userprofile__role__iexact='admin')
 
     if request.method == "POST":
 
@@ -1085,12 +1088,12 @@ def edit_ticket(request, id):
     ticket = get_object_or_404(Ticket, id=id, company=company)
     
     # Ownership Check: Only assignee or admin can edit
-    if ticket.assigned_to != request.user and profile.role != 'admin':
+    if ticket.assigned_to != request.user and str(getattr(profile, 'role', '')).lower() != 'admin':
         messages.error(request, "Permission denied. You can only edit tickets assigned to you.")
         return redirect("ticket_detail", id=ticket.id)
 
     # Assignment filtering: exclude admins
-    users = User.objects.filter(userprofile__company=company).exclude(userprofile__role='admin')
+    users = User.objects.filter(userprofile__company=company).exclude(userprofile__role__iexact='admin')
 
     if request.method == "POST":
         subject = request.POST.get("subject")
@@ -1227,7 +1230,7 @@ def delete_ticket(request, id):
     )
 
     # Ownership Check: Only assignee or admin can delete
-    if ticket.assigned_to != request.user and profile.role != 'admin':
+    if ticket.assigned_to != request.user and str(getattr(profile, 'role', '')).lower() != 'admin':
         messages.error(request, "Permission denied. You can only delete tickets assigned to you.")
         return redirect("ticket_detail", id=ticket.id)
 
@@ -1422,15 +1425,16 @@ def employee_dashboard(request):
 
 
     # Assignment requirement: Employee/Hybrid/Editor should only see their assigned tickets
-    if getattr(profile, 'role', None) in ["editor", "hybrid", "employee"]:
+    role_lower = str(getattr(profile, 'role', '')).lower()
+    if role_lower in ["editor", "hybrid", "employee"]:
         tickets = Ticket.objects.filter(company=company, assigned_to=request.user).order_by("-created_at")
     else:
         tickets = Ticket.objects.filter(company=company).order_by("-created_at")
 
     # Fetch users for Editor role (same as users_list logic)
     users = UserProfile.objects.none()
-    if getattr(profile, 'role', None) == "editor":
-        users = UserProfile.objects.filter(company=company).exclude(role="admin")
+    if role_lower == "editor":
+        users = UserProfile.objects.filter(company=company).exclude(role__iexact="admin")
 
     context = {
         "company": company,
@@ -1442,7 +1446,7 @@ def employee_dashboard(request):
     }
 
     # Set Dashboard Context for Managers
-    if profile and profile.role == "manager":
+    if profile and str(getattr(profile, 'role', '')).lower() == "manager":
         request.session['dashboard_context'] = 'secondary'
 
     return render(
@@ -1470,10 +1474,11 @@ def employee_profile(request):
 
     # Determine Dashboard URL for Back Link
     dashboard_url = 'employee_dashboard'
-    if getattr(profile, 'role', None) == "manager":
+    role_lower = str(getattr(profile, 'role', '')).lower()
+    if role_lower == "manager":
         context_type = request.session.get('dashboard_context', 'main')
         dashboard_url = 'manager_dashboard' if context_type == 'main' else 'employee_dashboard'
-    elif getattr(profile, 'role', None) == 'admin':
+    elif role_lower == 'admin':
         dashboard_url = 'company_admin_dashboard'
     elif request.user.is_superuser:
         dashboard_url = 'superadmin_dashboard'

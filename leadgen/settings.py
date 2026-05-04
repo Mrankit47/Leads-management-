@@ -20,7 +20,7 @@ SECRET_KEY = config('SECRET_KEY')
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = config('DEBUG', default=False, cast=bool)
 
-ALLOWED_HOSTS = ['.onrender.com']
+ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='127.0.0.1,localhost').split(',')
 
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 
@@ -78,7 +78,7 @@ WSGI_APPLICATION = 'leadgen.wsgi.application'
 
 DATABASES = {
     'default': dj_database_url.config(
-        default=f'sqlite:///{BASE_DIR / "db.sqlite3"}',
+        default=config('DATABASE_URL', default=f'sqlite:///{BASE_DIR / "db.sqlite3"}'),
         conn_max_age=600
     )
 }
@@ -192,8 +192,3 @@ SESSION_COOKIE_AGE =1800
 # Auto-logout when the browser is closed
 
 SESSION_EXPIRE_AT_BROWSER_CLOSE = True
-import dj_database_url
-
-DATABASES = {
-    'default': dj_database_url.parse(os.environ.get("DATABASE_URL"))
-}
