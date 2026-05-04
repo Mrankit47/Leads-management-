@@ -39,10 +39,8 @@ def get_dashboard_url(user):
 # ---------------- RBAC HELPERS ---------------- #
 
 def is_superadmin(user):
-    """Check if user has superadmin role"""
-    if not user or not user.is_authenticated: return False
     profile = getattr(user, 'userprofile', None)
-    return profile is not None and str(profile.role).lower() == "superadmin"
+    return profile and str(profile.role).lower() == "superadmin"
 
 def is_admin(user):
     """Check if user has admin role"""
@@ -244,7 +242,9 @@ def update_gmail_settings(request):
 # ---------------- SUPERADMIN LOGIN ---------------- #
 
 def superadmin_login(request):
+
     if request.method == "POST":
+
         username = request.POST.get("username")
         password = request.POST.get("password")
 
@@ -254,17 +254,24 @@ def superadmin_login(request):
             messages.error(request, "Invalid username or password")
             return redirect("superadmin_login")
 
-        if not user.is_active:
-            messages.error(request, "This account is inactive.")
-            return redirect("superadmin_login")
+        # ✅ DEBUG PRINT (temporary)
+        print("USER:", user.username)
 
         profile = getattr(user, 'userprofile', None)
-        role = str(getattr(profile, 'role', '')).lower()
-        if role != "superadmin":
-            messages.error(request, "You do not have superadmin privileges.")
+
+        if not profile:
+            messages.error(request, "User profile not found")
+            return redirect("superadmin_login")
+
+        print("ROLE:", profile.role)
+
+        # ✅ FINAL FIX (case-insensitive)
+        if str(profile.role).lower() != "superadmin":
+            messages.error(request, f"Access denied. Your role is {profile.role}")
             return redirect("superadmin_login")
 
         login(request, user)
+
         return redirect("superadmin_dashboard")
 
     return render(request, "leads/superadmin_login.html")

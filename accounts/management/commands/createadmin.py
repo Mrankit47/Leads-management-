@@ -6,32 +6,30 @@ import os
 User = get_user_model()
 
 class Command(BaseCommand):
+    help = "Create or update superadmin"
+
     def handle(self, *args, **kwargs):
-        username = os.environ.get("DJANGO_SUPERUSER_USERNAME")
-        email = os.environ.get("DJANGO_SUPERUSER_EMAIL")
-        password = os.environ.get("DJANGO_SUPERUSER_PASSWORD")
 
-        # delete old user
-        User.objects.filter(username=username).delete()
+        username = os.environ.get("DJANGO_SUPERUSER_USERNAME", "superadmin")
+        email = os.environ.get("DJANGO_SUPERUSER_EMAIL", "admin@gmail.com")
+        password = os.environ.get("DJANGO_SUPERUSER_PASSWORD", "Admin@123")
 
-        # create new user (with proper hashing)
-        user = User.objects.create_user(
-            username=username,
-            email=email,
-            password=password
-        )
+        user, created = User.objects.get_or_create(username=username)
 
+        user.email = email
+        user.set_password(password)   # 🔥 password hashing fix
         user.is_staff = True
         user.is_superuser = True
+        user.is_active = True
         user.save()
 
-        # 🔥 IMPORTANT (ye tumhari problem fix karega)
+        # 🔥 ensure profile exists
         UserProfile.objects.update_or_create(
             user=user,
             defaults={
-                "role": "SUPERADMIN",
+                "role": "superadmin",   # ⚠️ lowercase रखना (tumhara code yahi expect karta hai)
                 "is_active": True
             }
         )
 
-        print("✅ Superadmin created")
+        self.stdout.write(self.style.SUCCESS("✅ Superadmin created/updated"))
